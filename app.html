@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Prime Circle - P2P Gifting & Matrix System</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Prime Circle">
+<meta name="theme-color" content="#111320">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+body{background:#0f1220;color:#fff;font-family:-apple-system,system-ui,sans-serif}
+.card{background:#262530;border:1px solid #7a5230;border-radius:28px}
+.row{background:#1a1c28;border-radius:999px}
+.seat{position:absolute;width:56px;height:56px;border-radius:50%;border:3px solid #f19e4a;background:#5d4230;display:flex;align-items:center;justify-content:center;font-weight:700}
+.seat.empty{background:#1a1c28;border-style:dashed;color:#777}
+.seat.review{background:#3b3a22;border-color:#facc15}
+.btn{border-radius:14px;padding:12px;font-weight:700;width:100%}
+.in{background:#1a1c28;border:1px solid #444;border-radius:12px;padding:10px;width:100%}
+@media print{header,nav,button{display:none!important}body{background:#fff;color:#000}.card{background:#fff;border:1px solid #999}}
+</style></head>
+<body class="pb-24">
+<header class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-[#111320] border-b border-slate-700">
+  <div class="flex items-center gap-2 text-xl font-bold"><button data-a="menu" class="text-2xl mr-1" aria-label="Menu">☰</button><span class="w-8 h-8 rounded-full border-2 border-amber-400 flex items-center justify-center"><i class="w-3 h-3 rounded-full bg-amber-400"></i></span><span>Prime <span class="text-amber-400">Circle</span></span></div>
+  <div class="flex items-center gap-3">
+    <button data-a="refresh" id="rf" class="text-xl" title="Refresh">⟳</button>
+    <button data-a="hdr" id="who" class="text-xs font-bold rounded-full px-3 py-1.5 bg-amber-500 text-black"></button>
+    <button data-a="tab" data-v="notes" class="relative text-2xl">🔔<span id="bell" class="absolute -top-1 -right-2 bg-amber-500 text-xs rounded-full px-1.5">0</span></button>
+  </div>
+</header>
+<main id="view" class="p-4 space-y-4 max-w-md mx-auto"></main>
+<nav class="fixed bottom-0 inset-x-0 bg-[#111320] border-t border-slate-700 flex justify-around py-2 text-xs" id="nav"></nav>
+<div id="menu"></div>
+<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-2 rounded-full text-sm font-semibold hidden z-50"></div>
+<script src="app1.js"></script>
+<script src="app2.js"></script>
+<script>
+(function(){var v=document.getElementById("view");
+if(!window.PC1)v.innerHTML='<div style="padding:20px;color:#fbbf24">app1.js is missing or incomplete. Re-upload app1.js</div>';
+else if(!window.PC2)v.innerHTML='<div style="padding:20px;color:#fbbf24">app2.js is missing or incomplete. Re-upload app2.js</div>';})();
+</script></body></html>
