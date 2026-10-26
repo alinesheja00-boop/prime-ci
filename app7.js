@@ -1,4 +1,4 @@
-//github.(function(){TIERS.length=0;[["Bronze",25],["Silver",50],["Gold",100],["Platinum",250],["Sapphire",500],["Emerald",1000],["Ruby",2500],["Diamond",5000]].forEach(function(x){TIERS.push(x)});S.prices=TIERS.map(function(x){return x[1]});while(S.lv.length<TIERS.length)S.lv.push({seats:[],joined:[]});applyPrices();if(S.tier>=TIERS.length)S.tier=0})();
+(function(){TIERS.length=0;[["Bronze",25],["Silver",50],["Gold",100],["Platinum",250],["Sapphire",500],["Emerald",1000],["Ruby",2500],["Diamond",5000]].forEach(function(x){TIERS.push(x)});var _e=ensure;ensure=function(){_e();while(S.lv.length<TIERS.length)S.lv.push({seats:[],joined:[]});if(!Array.isArray(S.prices)||S.prices.length!==TIERS.length)S.prices=TIERS.map(function(x){return x[1]})};ensure();applyPrices();if(S.tier>=TIERS.length)S.tier=0})();
 (function(){
 function autoRound(){var did=false;
  for(var li=0;li<TIERS.length;li++){var l=S.lv[li];
@@ -35,4 +35,3 @@ document.addEventListener("click",function(){setTimeout(function(){if(tick())ren
 if(tick())render();
 window.PC7=1;
 })();
-com/primecircle-rw/prime-ci/edit/main/app7.js
