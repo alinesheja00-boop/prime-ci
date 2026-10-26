@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Circle - P2P Gifting & Matrix System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f1117; color: #f3f4f6; }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <!-- Header -->
+    <header class="flex justify-between items-center px-6 py-4 border-b border-gray-800">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-bold text-black">⊙</div>
+            <span class="font-bold text-lg tracking-wide">Prime Circle</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span class="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full font-semibold">Admin Mode 🔒</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-md mx-auto p-4 space-y-6">
+        
+        <!-- Level & Stats Card -->
+        <div class="bg-gradient-to-b from-gray-900 to-gray-800/60 border border-gray-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">Bronze Matrix</h1>
+                    <p class="text-xs text-gray-400 mt-0.5">$25 per seat</p>
+                </div>
+                <div class="text-right">
+                    <span id="seat-counter" class="text-xl font-bold text-amber-400">8/8</span>
+                    <p class="text-[11px] text-gray-400">seats paid</p>
+                </div>
+            </div>
+
+            <!-- Circle Matrix Graphic Simulation -->
+            <div class="relative w-56 h-56 mx-auto my-5 flex items-center justify-center">
+                <div class="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex flex-col items-center justify-center shadow-lg shadow-amber-500/20 z-10 border-4 border-[#0f1117]">
+                    <span class="text-lg">👑</span>
+                    <span class="text-[10px] font-bold text-black uppercase tracking-wider">Receiver</span>
+                    <span class="text-[9px] font-semibold text-black/80">Active</span>
+                </div>
+                <div class="absolute inset-0 border border-dashed border-amber-500/30 rounded-full animate-spin" style="animation-duration: 60s;"></div>
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-gray-800/80">
+                <div class="bg-gray-800/40 p-2.5 rounded-xl">
+                    <span class="text-[11px] text-gray-400 block">Total Received</span>
+                    <span class="text-sm font-bold text-emerald-400">$200</span>
+                </div>
+                <div class="bg-gray-800/40 p-2.5 rounded-xl">
+                    <span class="text-[11px] text-gray-400 block">Verified Seats</span>
+                    <span class="text-sm font-bold text-amber-400">8 / 8</span>
+                </div>
+                <div class="bg-gray-800/40 p-2.5 rounded-xl">
+                    <span class="text-[11px] text-gray-400 block">Status</span>
+                    <span class="text-sm font-bold text-white">Ready</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN SETTINGS & GRADUATION PANEL -->
+        <div class="bg-gradient-to-b from-gray-900 to-gray-900/90 border border-amber-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+            <div class="flex items-center space-x-2 border-b border-gray-800 pb-3">
+                <span class="text-amber-400 text-lg">⚙️</span>
+                <h2 class="text-sm font-bold text-white uppercase tracking-wider">Admin Control & Rotation Panel</h2>
+            </div>
+            
+            <p class="text-xs text-gray-300">
+                As an active administrator, once all 8 gifts are received ($200), confirm full reception to auto-rotate current receiver and assign the next admin/receiver to the matrix level.
+            </p>
+
+            <div id="admin-action-container" class="space-y-3">
+                <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-semibold text-amber-300 block">Matrix Target Completed</span>
+                        <span class="text-[11px] text-gray-400">All 8 givers have paid $25 each.</span>
+                    </div>
+                    <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded font-bold">100%</span>
+                </div>
+
+                <button onclick="executeAdminGraduate()" class="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-sm rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center space-x-2">
+                    <span>Receiver Confirm & Graduate 🚀</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Givers List Preview -->
+        <div class="space-y-3">
+            <h3 class="text-sm font-semibold text-gray-300 px-1">Verified Givers (8/8)</h3>
+            <div class="space-y-2 text-xs">
+                <div class="bg-gray-900/80 border border-gray-800/80 p-3 rounded-xl flex items-center justify-between text-gray-300">
+                    <span>1. Ikamba</span>
+                    <span class="text-emerald-400 font-semibold">✓ Paid ($25)</span>
+                </div>
+                <div class="bg-gray-900/80 border border-gray-800/80 p-3 rounded-xl flex items-center justify-between text-gray-300">
+                    <span>2. Yvette</span>
+                    <span class="text-emerald-400 font-semibold">✓ Paid ($25)</span>
+                </div>
+                <div class="bg-gray-900/80 border border-gray-800/80 p-3 rounded-xl flex items-center justify-between text-gray-300">
+                    <span>3. Papa J</span>
+                    <span class="text-emerald-400 font-semibold">✓ Paid ($25)</span>
+                </div>
+                <div class="bg-gray-900/80 border border-gray-800/80 p-3 rounded-xl flex items-center justify-between text-gray-300">
+                    <span>4. Odette Kwitegetse</span>
+                    <span class="text-emerald-400 font-semibold">✓ Paid ($25)</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0f1117]/90 backdrop-blur-md border-t border-gray-800 py-2 px-6 flex justify-between items-center z-50">
+        <button class="flex flex-col items-center text-gray-400 hover:text-amber-400 space-y-1">
+            <span class="text-lg">📊</span>
+            <span class="text-[10px]">Overview</span>
+        </button>
+        <button class="flex flex-col items-center text-gray-400 hover:text-amber-400 space-y-1">
+            <span class="text-lg">🗂️</span>
+            <span class="text-[10px]">Levels</span>
+        </button>
+        <button class="flex flex-col items-center text-amber-400 space-y-1">
+            <span class="text-lg">⊙</span>
+            <span class="text-[10px] font-semibold">Circle</span>
+        </button>
+        <button class="flex flex-col items-center text-gray-400 hover:text-amber-400 space-y-1">
+            <span class="text-lg">⚙️</span>
+            <span class="text-[10px]">Admin</span>
+        </button>
+    </nav>
+
+    <!-- Script for Admin Graduation & Next Level Rotation -->
+    <script>
+        function executeAdminGraduate() {
+            const actionContainer = document.getElementById('admin-action-container');
+            actionContainer.innerHTML = `
+                <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-center space-y-2">
+                    <span class="text-lg">🎉</span>
+                    <h4 class="text-sm font-bold text-emerald-400">Graduation & Rotation Successful!</h4>
+                    <p class="text-[11px] text-gray-300">Current receiver has received all funds ($200), graduated to Silver Level, and the next admin/receiver has been assigned to the circle.</p>
+                </div>
+            `;
+            document.getElementById('seat-counter').innerText = '0/8';
+        }
+    </script>
+</body>
+</html>
