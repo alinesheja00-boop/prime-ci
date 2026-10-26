@@ -1,3 +1,4 @@
+//github.(function(){TIERS.length=0;[["Bronze",25],["Silver",50],["Gold",100],["Platinum",250],["Sapphire",500],["Emerald",1000],["Ruby",2500],["Diamond",5000]].forEach(function(x){TIERS.push(x)});S.prices=TIERS.map(function(x){return x[1]});while(S.lv.length<TIERS.length)S.lv.push({seats:[],joined:[]});applyPrices();if(S.tier>=TIERS.length)S.tier=0})();
 (function(){
 function autoRound(){var did=false;
  for(var li=0;li<TIERS.length;li++){var l=S.lv[li];
@@ -14,7 +15,7 @@ function autoRound(){var did=false;
    toast(r.n+" received $"+amt+msg+(nx?" · Next: "+nx.n+" 👑":""));
    did=true}}
  return did}
-var VIP={0:["jasher"],1:["prime","jasher"],2:["prime","jasher"],3:["prime","jasher"],4:["prime","jasher"]},VN={prime:"Prime",jasher:"Jasher"};
+var VIP={0:["jasher"],1:["prime","jasher"],2:["prime","jasher"],3:["prime","jasher"],4:["prime","jasher"],5:["prime","jasher"],6:["prime","jasher"],7:["prime","jasher"]},VN={prime:"Prime",jasher:"Jasher"};
 function ensureVIP(){var ch=false;
  S.lv.forEach(function(l,li){(VIP[li]||[]).forEach(function(k){
   if(!l.joined.some(function(x){return key(x.n)===k})){l.joined.push({no:l.joined.length+1,n:VN[k],d:today(),got:false});ch=true}})});
@@ -34,4 +35,4 @@ document.addEventListener("click",function(){setTimeout(function(){if(tick())ren
 if(tick())render();
 window.PC7=1;
 })();
-
+com/primecircle-rw/prime-ci/edit/main/app7.js
