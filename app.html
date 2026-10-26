@@ -65,7 +65,7 @@ const isRecvOf=k=>S.lv.some(l=>{const w=l.joined.find(x=>!x.got);return w&&key(w
 const isRecv=()=>{const w=waiting()[0];return !!(S.me&&w&&key(w.n)===S.me)};
 const staff=()=>S.admin||isRecv();
 const role=()=>S.admin?"Admin":S.me?(isRecvOf(S.me)?"Receiver":"Giver"):"Guest";
-const needAdmin=()=>S.admin||(toast("Admin only: Settings → Admin login"),false);
+const needAdmin=()=>S.admin||(toast("Admin only"),false);
 const needStaff=()=>staff()||(toast("Only the admin or the current receiver can do this"),false);
 const note=(to,msg)=>{S.notes.unshift({to,msg,d:new Date().toLocaleString(),read:false});S.notes=S.notes.slice(0,60)};
 const mine=()=>S.notes.filter(x=>x.to==="all"||(x.to==="staff"&&staff())||(S.me&&x.to===S.me));
@@ -80,7 +80,7 @@ function members(){const m={};const add=n=>{const k=key(n);idOf(n);return m[k]=m
  Object.values(S.access).forEach(a=>{add(a.n).access=a.l});
  return Object.values(m).sort((a,b)=>a.n.localeCompare(b.n))}
 function memberRows(){const q=(S.q||"").toLowerCase(),ms=members().filter(m=>m.n.toLowerCase().includes(q)||idOf(m.n).toLowerCase().includes(q));
- return ms.map(m=>{const k=key(m.n);return `<li data-a="prof" data-v="${esc(k)}" class="bg-[#1a1c28] rounded-2xl px-4 py-2 text-sm"><div class="flex justify-between items-center"><b>${esc(m.n)} ${idTag(m.n)} ${m.reg?"":"<span class='text-xs text-slate-500'>(no account)</span>"}</b><span class="text-xs text-slate-400">${isRecvOf(k)?"👑 Receiver":"Giver"} ›</span></div><div class="text-xs text-slate-400 mt-1">${Object.entries(m.lv).map(([i,s])=>`${TIERS[i][0]}: ${stTxt(s)}`).join(" · ")||"—"}${m.access!==undefined?` · 🎓 access to ${TIERS[m.access][0]}`:""}</div></li>`}).join("")||`<li class='text-slate-500 text-sm'>No members found</li>`}
+ return ms.map(m=>{const k=key(m.n);return `<li data-a="prof" data-v="${esc(k)}" class="bg-[#1a1c28] rounded-2xl px-4 py-2 text-sm"><div class="flex justify-between items-center"><b>${esc(m.n)} ${idTag(m.n)} ${(S.mem[k]||{}).admin?"🛡":""} ${m.reg?"":"<span class='text-xs text-slate-500'>(no account)</span>"}</b><span class="text-xs text-slate-400">${isRecvOf(k)?"👑 Receiver":"Giver"} ›</span></div><div class="text-xs text-slate-400 mt-1">${Object.entries(m.lv).map(([i,s])=>`${TIERS[i][0]}: ${stTxt(s)}`).join(" · ")||"—"}${m.access!==undefined?` · 🎓 access to ${TIERS[m.access][0]}`:""}</div></li>`}).join("")||`<li class='text-slate-500 text-sm'>No members found</li>`}
 
 function levelBar(){return `<div class="flex gap-2 overflow-x-auto pb-1">${TIERS.map((x,i)=>`<button data-a="lvl" data-v="${i}" class="shrink-0 px-3 py-1 rounded-full text-sm font-bold ${i===S.tier?"bg-amber-500 text-black":"bg-[#1a1c28] text-slate-300"}">${unlocked(i)?"":"🔒 "}${x[0]}</button>`).join("")}</div>`}
 function ring(){let h="";for(let i=0;i<N;i++){const a=(-90+i*45)*Math.PI/180,x=150+120*Math.cos(a)-28,y=150+120*Math.sin(a)-28,p=seats()[i];
@@ -130,17 +130,18 @@ function notes(){const ns=mine();
 function login(){return `<div class="card p-5 space-y-3">${back}<h3 class="font-bold">👤 Login / Register</h3>
  <input id="lEmail" class="in" type="email" placeholder="Email" autocapitalize="off" inputmode="email"><input id="lName" class="in" placeholder="Full name (register only)"><input id="lPin" class="in" type="password" placeholder="Personal PIN (4+ digits)" inputmode="numeric">
  <div class="grid grid-cols-2 gap-2"><button data-a="login" class="btn bg-emerald-600">Login</button><button data-a="register" class="btn bg-blue-600">Register</button></div>
- <button data-a="adm" class="btn bg-amber-500 text-black">🔒 Admin login</button><p class="text-xs text-slate-500">Log in with your <b>email + PIN</b>. To create an account, fill email, full name and a PIN (4+ digits), then tap Register. Accounts are stored on this device only. Default admin PIN: 1234</p></div>`}
+ <p class="text-xs text-slate-500">Log in with your <b>email + PIN</b>. To create an account, fill email, full name and a PIN (4+ digits), then tap Register. Accounts are stored on this device only.</p><button data-a="adm" class="text-xs text-slate-500 underline">Owner access</button></div>`}
 
 function profile(){const back=`<button data-a="tab" data-v="members" class="text-sm text-amber-400">← Back to Members</button>`;const k=S.pv,m=members().find(x=>key(x.n)===k);if(!m)return `<div class="card p-5 space-y-3">${back}<p>Member not found</p></div>`;
  const r=S.mem[k],see=S.admin||S.me===k,pays=S.pay.filter(p=>key(p.n)===k),got=S.done.filter(d=>key(d.n)===k);
  return `<div class="card p-5 space-y-3">${back}
- <div class="flex items-center gap-3"><div class="w-14 h-14 rounded-full bg-[#f19e4a] text-black text-2xl font-bold flex items-center justify-center">${esc(m.n[0].toUpperCase())}</div><div><div class="text-xl font-bold">${esc(m.n)}</div><div class="text-sm">🆔 <b class="text-amber-400 font-mono">${idOf(m.n)}</b></div><div class="text-xs text-slate-400">${isRecvOf(k)?"👑 Receiver":"Giver"}${r?" · joined "+esc(r.d):" · no account"}</div></div></div>
+ <div class="flex items-center gap-3"><div class="w-14 h-14 rounded-full bg-[#f19e4a] text-black text-2xl font-bold flex items-center justify-center">${esc(m.n[0].toUpperCase())}</div><div><div class="text-xl font-bold">${esc(m.n)}</div><div class="text-sm">🆔 <b class="text-amber-400 font-mono">${idOf(m.n)}</b></div><div class="text-xs text-slate-400">${isRecvOf(k)?"👑 Receiver":"Giver"}${r&&r.admin?" · 🛡 Admin":""}${r?" · joined "+esc(r.d):" · no account"}</div></div></div>
  ${see&&r?`<div class="text-sm">✉️ ${esc(r.email||r.phone||"—")}</div>`:""}
  ${m.access!==undefined?`<div class="text-sm text-emerald-400">🎓 Access up to ${TIERS[m.access][0]}</div>`:""}
  <h3 class="font-bold">Levels</h3><ul class="space-y-1 text-sm">${Object.entries(m.lv).map(([i,s])=>`<li class="row px-4 py-2 flex justify-between"><span>${TIERS[i][0]}</span><span>${stTxt(s)}</span></li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul>
  <h3 class="font-bold">Payments (${pays.length})</h3><ul class="space-y-1 text-sm">${pays.map(p=>`<li class="row px-4 py-2 flex justify-between"><span>${esc(p.tier)} · $${p.amt}<br><span class="text-xs text-slate-400">${esc(p.d)} · ref ${esc(p.ref||"—")}</span></span><span class="${p.st==="approved"?"text-emerald-400":p.st==="rejected"?"text-red-400":"text-amber-400"}">${esc(p.st)}</span></li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul>
  <h3 class="font-bold">Received (${got.length})</h3><ul class="space-y-1 text-sm">${got.map(d=>`<li class="row px-4 py-2 flex justify-between"><span>${esc(d.tier)} · ${esc(d.d)}</span><span>${d.type==="Removed"?"✖":"$"+d.amt}</span></li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul>
+ ${S.admin&&r?`<button data-a="mkAdm" data-v="${esc(k)}" class="btn ${r.admin?"bg-slate-600":"bg-amber-500 text-black"}">${r.admin?"Remove admin rights":"Make admin 🛡"}</button>`:""}
  ${S.admin?`<button data-a="setM" data-v="${esc(k)}" class="btn bg-blue-600">✉️ Set email / PIN</button><button data-a="delM" data-v="${esc(k)}" class="btn bg-red-600">Remove member</button>`:""}</div>`}
 
 function reports(){if(!S.admin)return `<div class="card p-5 space-y-3">${back}<p class="text-sm">Reports are for the admin. Log in as admin in Settings.</p></div>`;
@@ -160,23 +161,22 @@ function more(){const ms=members(),m=me();
  <div class="card p-5 space-y-3"><h3 class="font-bold text-amber-400">⚙️ Settings ${S.admin?"· Admin (full control)":"· Member"}</h3>
  <div class="text-sm">${m?`Signed in as <b>${esc(m.n)}</b> ${idTag(m.n)} · ${role()}`:"Not signed in (Guest)"}</div>
  ${m?`<div class="grid grid-cols-2 gap-2"><button data-a="prof" data-v="${esc(S.me)}" class="btn bg-slate-600 text-sm">My profile</button><button data-a="logout" class="btn bg-slate-600 text-sm">Log out</button></div>`:`<button data-a="tab" data-v="login" class="btn bg-blue-600">Login / Register</button>`}
- <button data-a="adm" class="btn ${S.admin?"bg-slate-600":"bg-amber-500 text-black"}">${S.admin?"Admin Mode 🔓 — Logout":"Admin Mode 🔒 — Login"}</button>
- ${S.admin?"":`<p class="text-xs text-slate-500">Default admin PIN: 1234</p>`}
+ ${S.admin?`<button data-a="adm" class="btn bg-slate-600">Admin Mode 🔓 — Logout</button>`:`<button data-a="adm" class="text-xs text-slate-500 underline">Owner access</button>`}
  <button data-a="tab" data-v="notes" class="btn bg-[#1a1c28] text-sm">🔔 Notifications (${unread()} new)</button></div>
  <button data-a="tab" data-v="members" class="card p-5 w-full text-left flex justify-between"><span class="font-bold">👥 Members (${ms.length})</span><span class="text-slate-400">›</span></button>
  ${S.admin?`<div class="card p-5 space-y-2"><h3 class="font-bold">📊 Reports</h3><button data-a="tab" data-v="reports" class="btn bg-slate-600">Open reports & export</button></div>
  <div class="card p-5 space-y-2"><h3 class="font-bold">🔓 Level access</h3><button data-a="lockLv" class="btn ${S.lockLv?"bg-amber-500 text-black":"bg-emerald-600"}">${S.lockLv?"🔒 Levels need graduation — tap to open all":"🔓 All levels open — tap to require graduation"}</button></div>
  <div class="card p-5 space-y-2"><h3 class="font-bold">💲 Level prices</h3>${TIERS.map((x,i)=>`<div class="row flex justify-between items-center px-4 py-2 text-sm"><span>${x[0]} · $${x[1]} / seat</span><button data-a="price" data-v="${i}" class="text-amber-400 font-bold">Edit</button></div>`).join("")}</div>
  <div class="card p-5 space-y-3"><h3 class="font-bold">💾 Backup</h3><div class="grid grid-cols-2 gap-2"><button data-a="bkCopy" class="btn bg-slate-600">Copy backup</button><button data-a="bkRestore" class="btn bg-slate-600">Restore</button></div></div>
- <div class="card p-5 space-y-3"><h3 class="font-bold">🔐 Security & data</h3><div class="grid grid-cols-2 gap-2"><button data-a="pin" class="btn bg-slate-600">Change admin PIN</button><button data-a="clear" class="btn bg-slate-600">Clear seats</button></div><button data-a="reset" class="btn bg-red-600">Reset all</button></div>`:""}
- <div class="card p-5 text-sm text-slate-400 space-y-1"><h3 class="font-bold text-white">ℹ️ About</h3><div>Prime Circle · v2.1</div><div>${ms.length} members · ${S.rounds} full rounds · $${S.total} received</div><div>Data is saved on this device only.</div></div>`}
+ <div class="card p-5 space-y-3"><h3 class="font-bold">🔐 Security & data</h3><div class="grid grid-cols-2 gap-2"><button data-a="pin" class="btn bg-slate-600">Change owner PIN</button><button data-a="clear" class="btn bg-slate-600">Clear seats</button></div><button data-a="reset" class="btn bg-red-600">Reset all</button></div>`:""}
+ <div class="card p-5 text-sm text-slate-400 space-y-1"><h3 class="font-bold text-white">ℹ️ About</h3><div>Prime Circle · v2.2</div><div>${ms.length} members · ${S.rounds} full rounds · $${S.total} received</div><div>Data is saved on this device only.</div></div>`}
 
 function menuHtml(){if(!S.menu)return "";const m=me(),it=(a,v,i,l)=>`<button data-a="${a}" data-v="${v}" class="w-full text-left px-4 py-3 rounded-xl bg-[#1a1c28] flex justify-between"><span>${i} ${l}</span><span class="text-slate-500">›</span></button>`;
  return `<div data-a="menu" class="fixed inset-0 z-40 bg-black/60"><div class="w-72 max-w-[85%] h-full bg-[#111320] border-r border-slate-700 p-4 space-y-2 overflow-y-auto" onclick="event.stopPropagation()"><div class="flex justify-between items-center mb-2"><div><div class="font-bold text-amber-400">Prime Circle</div><div class="text-xs text-slate-400">${m?esc(m.n)+" · "+idOf(m.n)+" · ":""}${role()}</div></div><button data-a="menu" class="text-2xl">✕</button></div>
  ${it("tab","overview","▦","Overview")}${it("tab","levels","☰","Levels")}${it("tab","circle","◉","Circle")}${it("tab","payments","➕","Request a seat")}${it("tab","payments","▭","Payments")}${it("tab","notes","🔔","Notifications ("+unread()+")")}
  ${it("tab","members","👥","Members")}${it("tab","more","⚙️","Settings")}${m?it("prof",S.me,"👤","My profile"):it("tab","login","👤","Login / Register")}
  ${S.admin?it("tab","reports","📊","Reports & export"):""}${it("refresh","","⟳","Refresh")}
- ${S.admin?it("adm","","🔓","Admin logout"):it("adm","","🔒","Admin login")}${m?it("logout","","↩","Log out"):""}</div></div>`}
+ ${S.admin?it("adm","","🔓","Admin logout"):""}${m?it("logout","","↩","Log out"):""}</div></div>`}
 const VIEWS={members:membersView,circle,overview,levels,payments,more,notes,login,profile,reports};
 function render(){
  $("view").innerHTML=(VIEWS[S.tab]||circle)();
@@ -193,79 +193,4 @@ function finish(up){const T0=TIERS[S.tier],amt=T0[1]*N,r=waiting()[0];
  if(!confirm("Has "+r.n+" confirmed receiving $"+amt+"?"))return;
  r.got=true;S.total+=amt;S.rounds++;S.done.unshift({n:r.n,amt,tier:T0[0],type:up?"Graduate":"Approved",d:today()});LV().seats=[];
  let msg="";note(key(r.n),"You received $"+amt+" in "+T0[0]+" ✅");
- if(up){if(S.tier<TIERS.length-1){const k=key(r.n),old=S.access[k];S.access[k]={n:r.n,l:Math.max(old?old.l:0,S.tier+1)};msg=r.n+" unlocked "+TIERS[S.tier+1][0]+" 🔓";note(k,"You unlocked "+TIERS[S.tier+1][0]+" 🔓")}else msg=r.n+" completed the top level 🏆"}
- const nx=waiting()[0];if(nx)note(key(nx.n),"You are now the receiver 👑 in "+T0[0]);
- log(r.n+" "+(up?"Graduate 🚀":"Approved ✅")+" $"+amt+(msg?" → "+msg:"")+(nx?" | Next: "+nx.n:""));
- toast(msg||(nx?"Next: "+nx.n+" 👑":"No one else in the list"));render()}
-
-function refresh(quiet){try{const o=JSON.parse(localStorage.getItem(KEY));if(o&&o.lv){const keep={menu:false,admin:S.admin,tab:S.tab,me:S.me,pv:S.pv,q:S.q};S=Object.assign(o,keep);ensure();applyPrices()}}catch(e){}
- render();if(!quiet){const r=$("rf");r.style.transition="transform .5s";r.style.transform="rotate(360deg)";setTimeout(()=>{r.style.transition="none";r.style.transform=""},520);toast("Refreshed ✅")}}
-window.addEventListener("storage",e=>{if(e.key===KEY)refresh(true)});
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh(true)});
-function reqMsg(n,li,ref){return "PRIME CIRCLE — SEAT REQUEST\nID: "+idOf(n)+"\nName: "+n+"\nLevel: "+TIERS[li][0]+" ($"+TIERS[li][1]+")\nRef: "+ref+"\nCode: PCREQ|"+n+"|"+TIERS[li][0]+"|"+ref}
-function importReq(txt){const m=String(txt).match(/PCREQ\|([^|\n]+)\|([^|\n]+)\|([^\n]*)/);if(!m)return "Invalid request message";
- const n=m[1].trim(),li=TIERS.findIndex(x=>x[0]===m[2].trim()),ref=m[3].trim();if(li<0)return "Unknown level";
- const L2=S.lv[li];if(L2.seats.some(x=>key(x.n)===key(n)))return n+" is already in "+TIERS[li][0];if(L2.seats.length>=N)return "Seats are full";
- const id=++S.pid;L2.seats.push({n,s:"review",ref,pid:id});S.pay.push({id,n,tier:TIERS[li][0],amt:TIERS[li][1],ref,d:today(),st:"requested"});idOf(n);
- note("staff",n+" requested a seat in "+TIERS[li][0]+" (ref "+ref+")");log(n+" request imported ("+TIERS[li][0]+")");S.tier=li;return ""}
-const csv=rows=>rows.map(r=>r.map(c=>'"'+String(c==null?"":c).replace(/"/g,'""')+'"').join(",")).join("\n");
-const payCsv=()=>csv([["Date","Name","Level","Amount","Reference","Status"],...S.pay.map(p=>[p.d,p.n,p.tier,p.amt,p.ref,p.st])]);
-function dl(name,text){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv"}));a.download=name;document.body.appendChild(a);a.click();a.remove()}catch(e){prompt("Copy this:",text)}}
-
-document.addEventListener("input",e=>{if(e.target.id==="mq"){S.q=e.target.value;$("mlist").innerHTML=memberRows()}});
-document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,v=b.dataset.v;
- if(a==="menu"){S.menu=!S.menu;render();return}
- S.menu=false;
- if(a==="tab")S.tab=v;
- else if(a==="hdr"){if(S.me||S.admin){S.me=null;S.admin=false;S.tab="circle";toast("Logged out")}else S.tab="login"}
- else if(a==="shareWa"){window.open("https://wa.me/?text="+encodeURIComponent(S.last||""),"_blank");return}
- else if(a==="copyReq"){const j=S.last||"";(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>toast("Copied ✅")).catch(()=>prompt("Copy this:",j));return}
- else if(a==="closeLast"){S.last=null}
- else if(a==="impReq"){if(!needStaff())return;const x=prompt("Paste the request message here:");if(!x)return;const err=importReq(x);if(err)return toast(err);toast("Request added ✅")}
- else if(a==="refresh"){refresh();return}
- else if(a==="lvl"){S.tier=+v;if(S.tab==="levels")S.tab="circle";if(!unlocked(S.tier))toast("🔒 Locked: only graduates from "+TIERS[S.tier-1][0]+" can join")}
- else if(a==="approve"){if(!needStaff())return;return finish(false)}
- else if(a==="grad"){if(!needStaff())return;return finish(true)}
- else if(a==="adm"){if(S.admin)S.admin=false;else{const p=prompt("Admin PIN:");if(p===null)return;if(p!==S.pin)return toast("Wrong PIN ❌");S.admin=true}}
- else if(a==="login"){const id=$("lEmail").value.trim().toLowerCase(),r=Object.values(S.mem).find(x=>(x.email||"").toLowerCase()===id)||S.mem[id];if(!id)return toast("Enter your email");if(!r||r.pin!==$("lPin").value)return toast("Wrong email or PIN ❌");S.me=key(r.n);S.tab="more";toast("Welcome "+r.n)}
- else if(a==="register"){const n=$("lName").value.trim(),em=$("lEmail").value.trim().toLowerCase(),p=$("lPin").value;if(!n)return toast("Enter your full name");if(!/^\S+@\S+\.\S+$/.test(em))return toast("Enter a valid email");if(Object.values(S.mem).some(x=>(x.email||"").toLowerCase()===em))return toast("This email already has an account");if(!/^\d{4,}$/.test(p))return toast("PIN must be 4+ digits");if(S.mem[key(n)])return toast("This name already has an account");S.mem[key(n)]={n,email:em,pin:p,d:today()};S.me=key(n);S.tab="more";log(n+" registered");toast("Account created ✅ Your ID: "+idOf(n))}
- else if(a==="logout"){S.me=null;toast("Logged out")}
- else if(a==="prof"){S.pv=v;S.tab="profile"}
- else if(a==="ok"){if(!needStaff())return;const p=seats()[+v];p.s="paid";joinPush(p);const pr=payRec(p.pid);if(pr)pr.st="approved";note(key(p.n),"Your payment was approved ✅ ("+TIERS[S.tier][0]+")");if(paid()>=N)note("staff",TIERS[S.tier][0]+" is full — receiver can confirm receipt");log(p.n+" approved ("+TIERS[S.tier][0]+")")}
- else if(a==="rej"){if(!needStaff())return;const p=seats().splice(+v,1)[0];const pr=payRec(p.pid);if(pr)pr.st="rejected";note(key(p.n),"Your request was rejected ✖ ("+TIERS[S.tier][0]+")");log(p.n+" rejected ✖")}
- else if(a==="addG"){const n=$("gName").value.trim(),ref=($("gRef")?$("gRef").value.trim():"");
-  if(v==="paid"&&!needAdmin())return;if(!n)return toast("Enter a name");
-  if(v==="review"&&!ref)return toast("Enter your payment reference");
-  if(!canJoin(n,S.tier))return toast("🔒 "+n+" must graduate from "+TIERS[S.tier-1][0]+" first");
-  if(seats().some(s=>key(s.n)===key(n))||LV().joined.some(x=>!x.got&&key(x.n)===key(n)))return toast(n+" is already in this level");
-  if(seats().length>=N)return toast("Seats are full");
-  const id=++S.pid,p={n,s:v,ref:ref||"admin",pid:id};seats().push(p);
-  S.pay.push({id,n,tier:TIERS[S.tier][0],amt:TIERS[S.tier][1],ref:ref||"admin",d:today(),st:v==="paid"?"approved":"requested"});
-  if(v==="paid")joinPush(p);else{note("staff",n+" requested a seat in "+TIERS[S.tier][0]+" (ref "+ref+")");S.last=reqMsg(n,S.tier,ref)}
-  log(n+(v==="paid"?" paid":" requested")+" ("+TIERS[S.tier][0]+")");toast(v==="paid"?"✓":"Request sent ✅")}
- else if(a==="rmR"){if(!needAdmin())return;const x=LV().joined.splice(+v,1)[0];S.done.unshift({n:x.n,amt:0,tier:TIERS[S.tier][0],type:"Removed",d:today()});log(x.n+" removed")}
- else if(a==="addM"){if(!needAdmin())return;const n=$("mName").value.trim(),em=$("mEmail").value.trim().toLowerCase(),p=$("mPin").value.trim();
-  if(!n)return toast("Enter the full name");if(!/^\S+@\S+\.\S+$/.test(em))return toast("Enter a valid email");if(!/^\d{4,}$/.test(p))return toast("PIN must be 4+ digits");
-  if(S.mem[key(n)]&&S.mem[key(n)].email)return toast("This member already has an account");
-  if(Object.values(S.mem).some(x=>(x.email||"").toLowerCase()===em))return toast("This email is already used");
-  S.mem[key(n)]={n,email:em,pin:p,d:today()};log(n+" added as member ("+idOf(n)+")");toast("Member added ✅ "+idOf(n))}
- else if(a==="setM"){if(!needAdmin())return;const r=S.mem[v],nm=(members().find(x=>key(x.n)===v)||{}).n||v;const em=prompt("Email for "+nm+":",r?r.email||"":"");if(em===null)return;const e2=em.trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(e2))return toast("Enter a valid email");
-  if(Object.entries(S.mem).some(([k2,x])=>k2!==v&&(x.email||"").toLowerCase()===e2))return toast("This email is already used");
-  const pn=prompt("New PIN for "+nm+" (4+ digits, empty = keep):","");if(pn===null)return;if(pn&&!/^\d{4,}$/.test(pn))return toast("PIN must be 4+ digits");
-  const cur0=r||{n:nm,pin:"",d:today()};if(!r&&!pn)return toast("Set a PIN for this new account");S.mem[v]=Object.assign(cur0,{email:e2},pn?{pin:pn}:{});log("Account updated for "+nm);toast("Saved ✅")}
- else if(a==="delM"){if(!needAdmin())return;if(!confirm("Remove "+v+" from all levels?"))return;S.lv.forEach(l=>{l.joined=l.joined.filter(x=>key(x.n)!==v);l.seats=l.seats.filter(s=>key(s.n)!==v)});delete S.access[v];delete S.mem[v];if(S.me===v)S.me=null;log(v+" removed from members");S.tab="more"}
- else if(a==="lockLv"){if(!needAdmin())return;S.lockLv=!S.lockLv;log(S.lockLv?"Levels locked (graduates only)":"All levels opened")}
- else if(a==="price"){if(!needAdmin())return;const p=prompt("New seat price for "+TIERS[+v][0]+" ($):",TIERS[+v][1]);if(p===null)return;const n=Number(p);if(!(n>0))return toast("Enter a valid price");S.prices[+v]=n;applyPrices();log(TIERS[+v][0]+" price set to $"+n)}
- else if(a==="bkCopy"){if(!needAdmin())return;const j=JSON.stringify(S);(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>toast("Backup copied ✅")).catch(()=>prompt("Copy this backup:",j));return}
- else if(a==="bkRestore"){if(!needAdmin())return;const p=prompt("Paste your backup here:");if(!p)return;try{const o=JSON.parse(p);if(!Array.isArray(o.lv)||typeof o.tier!=="number")throw 0;S=o;ensure();S.admin=true;applyPrices();toast("Backup restored ✅")}catch(x){return toast("Invalid backup ❌")}}
- else if(a==="csvPay"){if(!needAdmin())return;dl("payments.csv",payCsv());return}
- else if(a==="csvMem"){if(!needAdmin())return;dl("members.csv",csv([["ID","Name","Email","Role","Levels"],...members().map(m=>[idOf(m.n),m.n,(S.mem[key(m.n)]||{}).email||"",isRecvOf(key(m.n))?"Receiver":"Giver",Object.entries(m.lv).map(([i,s])=>TIERS[i][0]+":"+s).join(" | ")])]));return}
- else if(a==="csvCopy"){if(!needAdmin())return;const j=payCsv();(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>toast("Copied ✅")).catch(()=>prompt("Copy this:",j));return}
- else if(a==="print"){window.print();return}
- else if(a==="nClear"){S.notes=S.notes.filter(x=>!mine().includes(x))}
- else if(a==="clear"){if(!needAdmin())return;S.pay.forEach(p=>{if(p.st==="requested"&&p.tier===TIERS[S.tier][0])p.st="cancelled"});LV().seats=[];log("Seats cleared")}
- else if(a==="pin"){if(!needAdmin())return;const p=prompt("New admin PIN (4+ digits):");if(p&&/^\d{4,}$/.test(p)){S.pin=p;toast("PIN changed ✅")}}
- else if(a==="reset"){if(!needAdmin())return;if(!confirm("Reset everything? (accounts are kept)"))return;const pin=S.pin,pr=S.prices,mem=S.mem,nums=S.nums,nn=S.nextNo;S=fresh();S.pin=pin;S.prices=pr;S.mem=mem;S.nums=nums;S.nextNo=nn;S.admin=true;S.total=0;S.rounds=0;S.lv=TIERS.map(()=>({seats:[],joined:[]}));S.tab="more"}
- render()});
-render();
-</script></body></html>
+ if(up){if(S.tier
