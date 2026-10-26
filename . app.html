@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Prime Circle - P2P Gifting & Matrix System</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Prime Circle">
+<meta name="theme-color" content="#111320">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+body{background:#0f1220;color:#fff;font-family:-apple-system,system-ui,sans-serif}
+.card{background:#262530;border:1px solid #7a5230;border-radius:28px}
+.row{background:#1a1c28;border-radius:999px}
+.seat{position:absolute;width:56px;height:56px;border-radius:50%;border:3px solid #f19e4a;background:#5d4230;display:flex;align-items:center;justify-content:center;font-weight:700}
+.seat.empty{background:#1a1c28;border-style:dashed;color:#777}
+.seat.review{background:#3b3a22;border-color:#facc15}
+.btn{border-radius:14px;padding:12px;font-weight:700;width:100%}
+.in{background:#1a1c28;border:1px solid #444;border-radius:12px;padding:10px;width:100%}
+@media print{header,nav,button{display:none!important}body{background:#fff;color:#000}.card{background:#fff;border:1px solid #999}}
+</style></head>
+<body class="pb-24">
+<header class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-[#111320] border-b border-slate-700">
+  <div class="flex items-center gap-2 text-xl font-bold"><button data-a="menu" class="text-2xl mr-1" aria-label="Menu">☰</button><span class="w-8 h-8 rounded-full border-2 border-amber-400 flex items-center justify-center"><i class="w-3 h-3 rounded-full bg-amber-400"></i></span><span>Prime <span class="text-amber-400">Circle</span></span></div>
+  <div class="flex items-center gap-3">
+    <button data-a="refresh" id="rf" class="text-xl" title="Refresh">⟳</button>
+    <button data-a="hdr" id="who" class="text-xs font-bold rounded-full px-3 py-1.5 bg-amber-500 text-black"></button>
+    <button data-a="tab" data-v="notes" class="relative text-2xl">🔔<span id="bell" class="absolute -top-1 -right-2 bg-amber-500 text-xs rounded-full px-1.5">0</span></button>
+  </div>
+</header>
+<main id="view" class="p-4 space-y-4 max-w-md mx-auto"></main>
+<nav class="fixed bottom-0 inset-x-0 bg-[#111320] border-t border-slate-700 flex justify-around py-2 text-xs" id="nav"></nav>
+<div id="menu"></div>
+<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-2 rounded-full text-sm font-semibold hidden z-50"></div>
+<script src="app1.js"></script>
+<script src="app2.js"></script>
+<script>const TIERS=[["Bronze",25],["Silver",50],["Gold",100],["Platinum",200],["Diamond",400]],N=8,KEY="primeCircleV5";
+const L={overview:"Overview",levels:"Levels",circle:"Circle",payments:"Payments",more:"Settings",received:"Received",review:"Requests",rounds:"Full rounds",givers:"Givers list",paid:"Paid",wait:"In review",empty:"Empty",seats:"seats paid",app:"Approved Receive ✅",grad:"Receiver Confirm & Graduate 🚀",recv:"RECEIVER",level:"LEVEL",
+ how:"How it works",h1:"1. Enter your payment reference (MoMo transaction ID) and tap Request.",h2:"2. Send the request message to the receiver (WhatsApp). The receiver pastes it here, checks the reference and taps ✔ Approve.",h3:"3. Approved people join the Receivers list in order. #1 receives first.",h4:"4. All levels are open to everyone. A receiver who taps Graduate also earns a 🎓 badge for the next level.",
+ s1:"1️⃣ Requests (in review until payment is confirmed)",s2:"2️⃣ Paid (approved)",s3:"3️⃣ Receivers list (paid only)",s4:"✅ Already received",s5:"🎓 Graduates (level access)",ask:"Request",ok:"✔ Approve",now:"👑 Receiving now",none:"Nobody yet",rm:"Remove"};
+const t=k=>L[k],today=()=>new Date().toLocaleDateString();
+const names=["Eliora","Jasher","Vandame","Ineza","Jay","Ivan","Kevin","Irene"];
+function fresh(){const lv=TIERS.map(()=>({seats:[],joined:[]}));
+ const pay=[];let pid=0;
+ lv[0].seats=names.map(n=>{const id=++pid;pay.push({id,n,tier:"Bronze",amt:25,ref:"—",d:today(),st:"requested"});return {n,s:"review",ref:"—",pid:id}});
+ lv[0].joined=[{no:1,n:"Prime",d:today(),got:true}];
+ return {tab:"circle",tier:0,total:200,rounds:1,pin:"1234",admin:false,hist:[],done:[{n:"Prime",amt:200,tier:"Bronze",type:"Approved",d:today()}],access:{},lv,mem:{},notes:[],pay,pid,me:null}}
+function load(){for(const k of [KEY,"primeCircleV4"]){try{const o=JSON.parse(localStorage.getItem(k));if(o&&o.lv)return o}catch(e){}}return null}
+let S=load()||fresh();
+function ensure(){S.mem=S.mem||{};S.notes=S.notes||[];S.pay=S.pay||[];S.pid=S.pid||0;S.me=S.me||null;S.nums=S.nums||{};S.nextNo=S.nextNo||Object.keys(S.nums).length;S.done=S.done||[];S.access=S.access||{};S.hist=S.hist||[]}
+ensure();S.admin=false;
+(function(){const j=S.lv&&S.lv[0]&&S.lv[0].joined,p=j&&j.find(x=>x.n==="Prime"&&!x.got);
+ if(p&&S.total===200&&S.rounds===1&&!S.done.some(d=>d.n==="Prime")){p.got=true;S.done.unshift({n:"Prime",amt:200,tier:"Bronze",type:"Approved",d:today()});S.lv[0].seats=[]}})();
+const applyPrices=()=>{if(!Array.isArray(S.prices))S.prices=TIERS.map(x=>x[1]);TIERS.forEach((x,i)=>{x[1]=S.prices[i]||x[1]})};
+applyPrices();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toast=m=>{const e=$("toast");e.textContent=m;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2600)};
+const log=m=>{S.hist.unshift(new Date().toLocaleString()+" — "+m);S.hist=S.hist.slice(0,12)};
+const key=n=>String(n).trim().toLowerCase();
+const idOf=n=>{const k=key(n);if(!S.nums[k])S.nums[k]=++S.nextNo;return "PC-"+String(S.nums[k]).padStart(3,"0")};
+const idTag=n=>`<span class="text-amber-400 text-xs font-mono">${idOf(n)}</span>`;
+const LV=()=>S.lv[S.tier],seats=()=>LV().seats;
+const paid=()=>seats().filter(x=>x.s==="paid").length,rev=()=>seats().filter(x=>x.s==="review").length;
+const waiting=()=>LV().joined.filter(x=>!x.got),cur=()=>(waiting()[0]||{n:"—"}).n;
+const unlocked=i=>i===0||!S.lockLv||Object.values(S.access).some(a=>a.l>=i);
+const canJoin=(n,i)=>i===0||!S.lockLv||((S.access[key(n)]||{l:0}).l>=i);
+const joinPush=p=>{const j=LV().joined;j.push({no:(j.length?Math.max(...j.map(x=>x.no)):0)+1,n:p.n,d:today(),got:false})};
+const me=()=>S.me?S.mem[S.me]:null;
+const isRecvOf=k=>S.lv.some(l=>{const w=l.joined.find(x=>!x.got);return w&&key(w.n)===k});
+const isRecv=()=>{const w=waiting()[0];return !!(S.me&&w&&key(w.n)===S.me)};
+const staff=()=>S.admin||isRecv();
+const role=()=>S.admin?"Admin":S.me?(isRecvOf(S.me)?"Receiver":"Giver"):"Guest";
+const needAdmin=()=>S.admin||(toast("Admin only"),false);
+const needStaff=()=>staff()||(toast("Only the admin or the current receiver can do this"),false);
+const note=(to,msg)=>{S.notes.unshift({to,msg,d:new Date().toLocaleString(),read:false});S.notes=S.notes.slice(0,60)};
+const mine=()=>S.notes.filter(x=>x.to==="all"||(x.to==="staff"&&staff())||(S.me&&x.to===S.me));
+const unread=()=>mine().filter(x=>!x.read).length;
+const payRec=id=>S.pay.find(p=>p.id===id);
+const back=`<button data-a="tab" data-v="more" class="text-sm text-amber-400">← Back to Settings</button>`;
+const stTxt=s=>s==="received"?"✅ received":s==="waiting"?"🟡 waiting":"⏳ requested";
+
+function people(){const m={};const add=n=>{const k=key(n);idOf(n);return m[k]=m[k]||{n,lv:{}}};
+ Object.values(S.mem).forEach(r=>{add(r.n).reg=true});
+ S.lv.forEach((l,li)=>{l.joined.forEach(x=>{add(x.n).lv[li]=x.got?"received":"waiting"});l.seats.forEach(s=>{if(s.s==="review"){const o=add(s.n);if(!o.lv[li])o.lv[li]="requested"}})});
+ Object.values(S.access).forEach(a=>{add(a.n).access=a.l});
+ return Object.values(m).sort((a,b)=>a.n.localeCompare(b.n))}
+const members=()=>people().filter(m=>m.reg);
+function memberRows(){const q=(S.q||"").toLowerCase(),ms=members().filter(m=>m.n.toLowerCase().includes(q)||idOf(m.n).toLowerCase().includes(q));
+ return ms.map(m=>{const k=key(m.n);return `<li data-a="prof" data-v="${esc(k)}" class="bg-[#1a1c28] rounded-2xl px-4 py-2 text-sm"><div class="flex justify-between items-center"><b>${esc(m.n)} ${idTag(m.n)} ${(S.mem[k]||{}).admin?"🛡":""} ${m.reg?"":"<span class='text-xs text-slate-500'>(no account)</span>"}</b><span class="text-xs text-slate-400">${isRecvOf(k)?"👑 Receiver":"Giver"} ›</span></div><div class="text-xs text-slate-400 mt-1">${Object.entries(m.lv).map(([i,s])=>`${TIERS[i][0]}: ${stTxt(s)}`).join(" · ")||"—"}${m.access!==undefined?` · 🎓 access to ${TIERS[m.access][0]}`:""}</div></li>`}).join("")||`<li class='text-slate-500 text-sm'>No members found</li>`}
+
+function levelBar(){return `<div class="flex gap-2 overflow-x-auto pb-1">${TIERS.map((x,i)=>`<button data-a="lvl" data-v="${i}" class="shrink-0 px-3 py-1 rounded-full text-sm font-bold ${i===S.tier?"bg-amber-500 text-black":"bg-[#1a1c28] text-slate-300"}">${unlocked(i)?"":"🔒 "}${x[0]}</button>`).join("")}</div>`}
+function ring(){let h="";for(let i=0;i<N;i++){const a=(-90+i*45)*Math.PI/180,x=150+120*Math.cos(a)-28,y=150+120*Math.sin(a)-28,p=seats()[i];
+ h+=`<div class="seat ${p?(p.s==="review"?"review":""):"empty"}" style="left:${x}px;top:${y}px">${p?esc(p.n[0].toUpperCase()):""}</div>`}return h}
+function stats(){return `<div class="grid grid-cols-3 gap-2 text-center">${[[t("received"),"$"+S.total],[t("review"),rev()],[t("rounds"),S.rounds]].map(a=>`<div class="bg-[#1a1c28] rounded-2xl py-3"><div class="text-xs text-slate-400">${a[0]}</div><div class="text-xl font-bold">${a[1]}</div></div>`).join("")}</div>`}
+function givers(){return `<h3 class="font-bold mt-2">${t("givers")}</h3><div class="space-y-2">${Array.from({length:N},(_,i)=>{const p=seats()[i];return `<div class="row flex justify-between px-4 py-3"><span><span class="text-slate-500 font-mono mr-2">${i+1}.</span>${p?esc(p.n):"—"}</span><span class="${p&&p.s==="paid"?"text-amber-400":"text-slate-500"}">${p?(p.s==="paid"?"✓ "+t("paid"):"⏳ "+t("wait")):t("empty")}</span></div>`}).join("")}</div>`}
+
+function circle(){const T0=TIERS[S.tier],full=paid()>=N;
+ return levelBar()+`<div class="card p-5"><div class="flex justify-between items-end"><div><div class="text-cyan-300 text-xs tracking-widest">${t("level")} ${S.tier+1}</div><div class="text-2xl font-bold">${T0[0]}</div><div class="text-slate-400">$${T0[1]} / seat</div></div><div class="text-right"><div class="text-3xl font-bold text-cyan-300">${paid()}/${N}</div><div class="text-xs text-slate-400">${t("seats")}</div></div></div>
+ <div class="relative mx-auto my-4" style="width:300px;height:300px"><div class="absolute rounded-full border-2 border-dashed border-amber-700" style="inset:30px"></div>${ring()}
+ <div class="absolute rounded-full bg-[#f19e4a] text-black text-center flex flex-col items-center justify-center" style="width:130px;height:130px;left:85px;top:85px">👑<b>${esc(cur())}</b><span class="text-xs">${t("recv")}</span></div></div>
+ <button data-a="tab" data-v="payments" class="btn bg-blue-600 mt-4">➕ Request a seat in ${T0[0]}</button>
+ ${stats()}${givers()}
+ ${full?(staff()?`<div class="space-y-2 mt-4"><button data-a="approve" class="btn bg-emerald-500">${t("app")}</button><button data-a="grad" class="btn bg-gradient-to-r from-amber-400 to-orange-500 text-black">${t("grad")}</button></div>`:`<p class="text-sm text-amber-400 mt-4 text-center">All seats paid. Waiting for the receiver (${esc(cur())}) to confirm.</p>`):""}</div>`}
+
+function overview(){const ac=Object.values(S.access);
+ return `<div class="card p-5 space-y-3"><div class="text-slate-400">Prime Circle</div><div class="text-4xl font-bold text-amber-400">$${S.total}</div>${stats()}
+ <h3 class="font-bold">${t("s5")} (${ac.length})</h3><ul class="space-y-2">${ac.map(a=>`<li class="row flex justify-between px-4 py-2 text-sm"><span>🎓 ${esc(a.n)}</span><span class="text-emerald-400">🔓 ${TIERS[a.l][0]}</span></li>`).join("")||`<li class='text-slate-500 text-sm'>${t("none")}</li>`}</ul>
+ <h3 class="font-bold">${t("s4")} (${S.done.length})</h3><ul class="space-y-2">${S.done.map((x,i)=>`<li class="row flex justify-between items-center px-4 py-2 text-sm"><span>${i+1}. ${esc(x.n)}<br><span class="text-xs text-slate-400">${x.d} · ${x.tier}</span></span><span class="${x.type==="Removed"?"text-red-400":"text-emerald-400"}">${x.type==="Removed"?"✖":"✓ $"+x.amt}</span></li>`).join("")||`<li class='text-slate-500 text-sm'>${t("none")}</li>`}</ul>
+ <h3 class="font-bold">History</h3><ul class="text-xs text-slate-300 space-y-1">${S.hist.map(h=>`<li>• ${esc(h)}</li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul></div>`}
+
+function levels(){return TIERS.map((x,i)=>{const g=Object.values(S.access).filter(a=>a.l>=i).map(a=>esc(a.n)).join(", "),pc=S.lv[i].seats.filter(s=>s.s==="paid").length;
+ return `<button data-a="lvl" data-v="${i}" class="card p-4 w-full text-left ${i===S.tier?"border-cyan-400":""}"><div class="flex justify-between items-center"><div><div class="text-xs text-cyan-300">${t("level")} ${i+1}</div><div class="text-xl font-bold">${x[0]}</div></div><div class="text-right"><div>$${x[1]} × ${N} = <b>$${x[1]*N}</b></div><div class="text-xs text-slate-400">${pc}/${N} · ${i===S.tier?"● Viewing":unlocked(i)?"🔓 Open":"🔒 Locked"}</div></div></div>${i>0&&g?`<div class="text-xs text-emerald-400 mt-2">🎓 Access: ${g}</div>`:""}</button>`}).join("")}
+
+function payments(){const sx=seats(),rq=sx.map((p,i)=>[p,i]).filter(x=>x[0].s==="review"),ap=sx.filter(p=>p.s==="paid"),w=waiting(),none=`<p class='text-slate-500 text-sm'>${t("none")}</p>`,m=me();
+ return levelBar()+`<div class="card p-5 space-y-3">
+ <div class="bg-[#1a1c28] rounded-2xl p-3 space-y-2 border border-blue-500"><div class="font-bold text-blue-300">➕ Request a seat — ${TIERS[S.tier][0]} ($${TIERS[S.tier][1]})</div>
+ <input id="gName" class="in" placeholder="Your name" value="${esc(m?m.n:"")}" ${m&&!S.admin?"readonly":""}>
+ <div class="flex gap-2"><input id="gRef" class="in" placeholder="Payment reference (MoMo ID)"><button data-a="addG" data-v="review" class="bg-blue-600 font-bold px-4 rounded-xl">${t("ask")}</button></div>
+ ${S.admin?`<button data-a="addG" data-v="paid" class="btn bg-emerald-700 text-sm">+ ${t("paid")} (admin)</button>`:""}
+ </div>
+ ${S.last?`<div class="bg-[#1a1c28] rounded-2xl p-3 space-y-2 border border-emerald-500"><div class="font-bold text-emerald-300">✅ Request saved — now send it to the receiver</div><pre class="text-xs whitespace-pre-wrap text-slate-300">${esc(S.last)}</pre><div class="grid grid-cols-2 gap-2"><button data-a="shareWa" class="btn bg-emerald-600 text-sm">Send on WhatsApp</button><button data-a="copyReq" class="btn bg-slate-600 text-sm">Copy message</button></div><button data-a="closeLast" class="text-xs text-slate-400">Close</button></div>`:""}
+ ${staff()?`<button data-a="impReq" class="btn bg-amber-500 text-black">📥 Paste a request from a member</button>`:""}
+ <div class="bg-[#1a1c28] rounded-2xl p-3 text-sm space-y-1"><b class="text-amber-400">${t("how")}</b><div>${t("h1")}</div><div>${t("h2")}</div><div>${t("h3")}</div><div>${t("h4")}</div></div>
+  <h3 class="font-bold pt-2">${t("s1")} (${rq.length})</h3>
+ ${rq.map(([p,i])=>`<div class="row flex justify-between items-center px-4 py-2"><span>${esc(p.n)} ${idTag(p.n)}<br><span class="text-xs text-slate-400">ref: ${esc(p.ref||"—")}</span></span>${staff()?`<span class="flex gap-1"><button data-a="ok" data-v="${i}" class="bg-emerald-500 px-3 py-1 rounded-full text-sm font-bold">${t("ok")}</button><button data-a="rej" data-v="${i}" class="bg-red-600 px-3 py-1 rounded-full text-sm font-bold">✖</button></span>`:`<span class="text-slate-400 text-sm">⏳ ${t("wait")}</span>`}</div>`).join("")||none}
+ <h3 class="font-bold pt-2">${t("s2")} (${ap.length})</h3>
+ ${ap.map(p=>`<div class="row px-4 py-2 text-amber-400">✓ ${esc(p.n)} ${idTag(p.n)}</div>`).join("")||none}
+ <h3 class="font-bold pt-2">${t("s3")} (${w.length})</h3>
+ <ul class="space-y-2">${w.map((x,i)=>`<li class="row flex justify-between items-center px-4 py-2 text-sm"><span><b class="text-amber-400">#${x.no}</b> ${esc(x.n)} ${idTag(x.n)}${i===0?`<br><span class="text-xs text-emerald-400">${t("now")}</span>`:""}</span><span class="flex items-center gap-2"><span class="text-xs text-slate-400">${x.d}</span>${staff()?`<button data-a="toRev" data-v="${S.tier}|${esc(key(x.n))}" class="bg-amber-500 text-black px-2 py-1 rounded-full text-xs font-bold">↩ Review</button>`:""}${S.admin?`<button data-a="rmR" data-v="${LV().joined.indexOf(x)}" class="text-red-400 text-xs">${t("rm")}</button>`:""}</span></li>`).join("")||none}</ul></div>`}
+
+function notes(){const ns=mine();
+ return `<div class="card p-5 space-y-3">${back}<h3 class="font-bold">🔔 Notifications (${ns.length})</h3>
+ <div class="grid grid-cols-2 gap-2"><button data-a="nClear" class="btn bg-slate-600 text-sm">Clear mine</button><button data-a="tab" data-v="payments" class="btn bg-blue-600 text-sm">Go to Payments</button></div>
+ <ul class="space-y-2">${ns.map(x=>`<li class="bg-[#1a1c28] rounded-2xl px-4 py-2 text-sm"><div>${esc(x.msg)}</div><div class="text-xs text-slate-500">${esc(x.d)}</div></li>`).join("")||`<li class='text-slate-500 text-sm'>No notifications</li>`}</ul></div>`}
+
+function login(){const accs=Object.values(S.mem).filter(x=>x.email);return `<div class="card p-5 space-y-3">${back}<h3 class="font-bold">👤 Login / Register</h3>
+ ${accs.length?`<div class="text-sm text-slate-400">Accounts on this device — tap one, then enter its password:</div><div class="space-y-2">${accs.map(a=>`<button data-a="pickAcc" data-v="${esc(a.email)}" class="w-full text-left rounded-2xl px-4 py-2 flex justify-between items-center ${S.pick===a.email?"bg-amber-500 text-black":"bg-[#1a1c28]"}"><span><b>${esc(a.n)}</b> ${a.admin?"🛡":""}<br><span class="text-xs opacity-70">${esc(a.email)}</span></span><span class="text-xs">${idOf(a.n)}</span></button>`).join("")}</div>`:""}
+ ${accs.filter(a=>bioGet()[key(a.n)]).map(a=>`<button data-a="bioIn" data-v="${esc(key(a.n))}" class="btn bg-emerald-600">🙂 Log in with Face ID — ${esc(a.n)}</button>`).join("")}
+ <input id="lEmail" class="in" type="email" placeholder="Email" autocapitalize="off" inputmode="email" value="${esc(S.pick||"")}"><input id="lName" class="in" placeholder="Full name (register only)"><input id="lPin" class="in" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
+ <div class="grid grid-cols-2 gap-2"><button data-a="login" class="btn bg-emerald-600">Login</button><button data-a="register" class="btn bg-blue-600">Register</button></div>
+ <p class="text-xs text-slate-500">Log in with your <b>email + password</b>. To create an account, fill email, full name and a password (6+ characters), then tap Register. Accounts are stored on this device only.</p><button data-a="adm" class="btn bg-slate-700 text-sm">🔑 Owner access (owner PIN)</button></div>`}
+
+function profile(){const back=`<button data-a="tab" data-v="members" class="text-sm text-amber-400">← Back to Members</button>`;const k=S.pv,m=people().find(x=>key(x.n)===k);if(!m)return `<div class="card p-5 space-y-3">${back}<p>Member not found</p></div>`;
+ const r=S.mem[k],see=S.admin||S.me===k,pays=S.pay.filter(p=>key(p.n)===k),got=S.done.filter(d=>key(d.n)===k);
+ return `<div class="card p-5 space-y-3">${back}
+ <div class="flex items-center gap-3"><div class="w-14 h-14 rounded-full bg-[#f19e4a] text-black text-2xl font-bold flex items-center justify-center">${esc(m.n[0].toUpperCase())}</div><div><div class="text-xl font-bold">${esc(m.n)}</div><div class="text-sm">🆔 <b class="text-amber-400 font-mono">${idOf(m.n)}</b></div><div class="text-xs text-slate-400">${isRecvOf(k)?"👑 Receiver":"Giver"}${r&&r.admin?" · 🛡 Admin":""}${r?" · joined "+esc(r.d):" · no account"}</div></div></div>
+ ${see&&r?`<div class="text-sm">✉️ ${esc(r.email||r.phone||"—")}</div>`:""}
+ ${m.access!==undefined?`<div class="text-sm text-emerald-400">🎓 Access up to ${TIERS[m.access][0]}</div>`:""}
+ <h3 class="font-bold">Levels</h3><ul class="space-y-1 text-sm">${Object.entries(m.lv).map(([i,s])=>`<li class="row px-4 py-2 flex justify-between"><span>${TIERS[i][0]}</span><span>${stTxt(s)}</span></li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul>
+ <h3 class="font-bold">Payments (${pays.length})</h3><ul class="space-y-1 text-sm">${pays.map(p=>`<li class="row px-4 py-2 flex justify-between"><span>${esc(p.tier)} · $${p.amt}<br><span class="text-xs text-slate-400">${esc(p.d)} · ref ${esc(p.ref||"—")}</span></span><span class="${p.st==="approved"?"text-emerald-400":p.st==="rejected"?"text-red-400":"text-amber-400"}">${esc(p.st)}</span></li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul>
+ <h3 class="font-bold">Received (${got.length})</h3><ul class="space-y-1 text-sm">${got.map(d=>`<li class="row px-4 py-2 flex justify-between"><span>${esc(d.tier)} · ${esc(d.d)}</span><span>${d.type==="Removed"?"✖":"$"+d.amt}</span></li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul>
+ ${S.admin&&r?`<button data-a="mkAdm" data-v="${esc(k)}" class="btn ${r.admin?"bg-slate-600":"bg-amber-500 text-black"}">${r.admin?"Remove admin rights":"Make admin 🛡"}</button>`:""}
+ ${S.admin?`<button data-a="setM" data-v="${esc(k)}" class="btn bg-blue-600">✉️ Set email / password</button><button data-a="delM" data-v="${esc(k)}" class="btn bg-red-600">Remove member</button>`:""}</div>`}
+
+function reports(){if(!S.admin)return `<div class="card p-5 space-y-3">${back}<p class="text-sm">Reports are for the admin. Log in as admin in Settings.</p></div>`;
+ const ap=S.pay.filter(p=>p.st==="approved"),pend=S.pay.filter(p=>p.st==="requested").length,sum=ap.reduce((a,p)=>a+p.amt,0);
+ return `<div class="card p-5 space-y-3">${back}<h3 class="font-bold">📊 Reports</h3>
+ <div class="grid grid-cols-2 gap-2 text-center">${[["Members",members().length],["Received","$"+S.total],["Payments approved","$"+sum],["Pending requests",pend]].map(a=>`<div class="bg-[#1a1c28] rounded-2xl py-3"><div class="text-xs text-slate-400">${a[0]}</div><div class="text-xl font-bold">${a[1]}</div></div>`).join("")}</div>
+ <h3 class="font-bold">By level</h3><ul class="space-y-2 text-sm">${TIERS.map((x,i)=>{const d=S.done.filter(z=>z.tier===x[0]&&z.type!=="Removed");return `<li class="row px-4 py-2 flex justify-between"><span>${x[0]} · $${x[1]}/seat</span><span>${S.lv[i].seats.filter(s=>s.s==="paid").length}/${N} seats · ${d.length} rounds · $${d.reduce((a,z)=>a+z.amt,0)}</span></li>`}).join("")}</ul>
+ <h3 class="font-bold">Export</h3><div class="grid grid-cols-2 gap-2"><button data-a="csvPay" class="btn bg-slate-600 text-sm">Payments CSV</button><button data-a="csvMem" class="btn bg-slate-600 text-sm">Members CSV</button><button data-a="csvCopy" class="btn bg-slate-600 text-sm">Copy payments</button><button data-a="print" class="btn bg-slate-600 text-sm">Print / PDF</button></div></div>`}
+
+function receiversView(){const w=waiting(),got=LV().joined.filter(x=>x.got),none=`<p class="text-slate-500 text-sm">${t("none")}</p>`;
+ return levelBar()+`<div class="card p-5 space-y-3">${back}<h3 class="font-bold">👑 Receivers list — ${TIERS[S.tier][0]}</h3>
+ <div class="text-sm text-slate-400">Only people whose payment is confirmed, in the order they joined. #1 receives first. (This is separate from the Members list.)</div>
+ <ul class="space-y-2">${w.map((x,i)=>`<li data-a="prof" data-v="${esc(key(x.n))}" class="row flex justify-between items-center px-4 py-2 text-sm"><span><b class="text-amber-400">#${i+1}</b> ${esc(x.n)} ${idTag(x.n)}${i===0?`<br><span class="text-xs text-emerald-400">${t("now")}</span>`:""}</span><span class="flex items-center gap-2"><span class="text-xs text-slate-400">${x.d}</span>${canAct(S.tier)?`<button data-a="toRev" data-v="${S.tier}|${esc(key(x.n))}" class="bg-amber-500 text-black px-3 py-1 rounded-full text-xs font-bold">↩ Review</button>`:""}</span></li>`).join("")||none}</ul>
+ <h3 class="font-bold pt-2">✅ Already received (${got.length})</h3>
+ <ul class="space-y-2">${got.map(x=>`<li class="row flex justify-between px-4 py-2 text-sm"><span>${esc(x.n)} ${idTag(x.n)}</span><span class="text-emerald-400">✓</span></li>`).join("")||none}</ul></div>`}
+function membersView(){const ms=members(),reg=ms.filter(m=>m.reg).length;
+ return `<div class="card p-5 space-y-3">${back}<h3 class="font-bold">👥 Members (${ms.length})</h3><div class="text-xs text-slate-500">Registered accounts only. The queue of people receiving is in <b>👑 Receivers list</b>.</div>${me()&&!S.admin?`<div class="text-sm">Your ID: <b class="text-amber-400 font-mono">${idOf(me().n)}</b> · view only</div>`:""}
+ <div class="grid grid-cols-3 gap-2 text-center text-xs">${[["Total",ms.length],["With account",reg],["Receivers",ms.filter(m=>isRecvOf(key(m.n))).length]].map(a=>`<div class="bg-[#1a1c28] rounded-2xl py-2"><div class="text-slate-400">${a[0]}</div><div class="text-lg font-bold">${a[1]}</div></div>`).join("")}</div>
+ ${S.admin?`<div class="bg-[#1a1c28] rounded-2xl p-3 space-y-2 border border-amber-600"><div class="font-bold text-amber-400">➕ Add member</div><input id="mName" class="in" placeholder="Full name"><input id="mEmail" class="in" type="email" placeholder="Email" autocapitalize="off"><input id="mPin" class="in" placeholder="Temporary password (6+ characters)"><button data-a="addM" class="btn bg-emerald-600">Add member</button></div>`:""}
+ <input id="mq" class="in" placeholder="Search name or ID" value="${esc(S.q||"")}"><ul id="mlist" class="space-y-2">${memberRows()}</ul></div>`}
+window.PC1=1;
+
+(function(){var v=document.getElementById("view");
+if(!window.PC1)v.innerHTML='<div style="padding:20px;color:#fbbf24">app1.js is missing or incomplete. Re-upload app1.js</div>';
+else if(!window.PC2)v.innerHTML='<div style="padding:20px;color:#fbbf24">app2.js is missing or incomplete. Re-upload app2.js</div>';})();
+</script></body></html>function more(){const ms=members(),m=me();
+ return `${m?`<div class="card p-5 text-center space-y-1 border border-amber-500"><div class="text-xs text-slate-400">MY ID NUMBER</div><div class="text-4xl font-bold font-mono text-amber-400">${idOf(m.n)}</div><div class="font-bold">${esc(m.n)}</div><div class="text-xs text-slate-400">${role()}</div></div>`:""}
+ <div class="card p-5 space-y-3"><h3 class="font-bold text-amber-400">⚙️ Settings ${S.admin?"· Admin (full control)":"· Member"}</h3>
+ <div class="text-sm">${m?`Signed in as <b>${esc(m.n)}</b> ${idTag(m.n)} · ${role()}`:"Not signed in (Guest)"}</div>
+ ${m?`<div class="grid grid-cols-2 gap-2"><button data-a="prof" data-v="${esc(S.me)}" class="btn bg-slate-600 text-sm">My profile</button><button data-a="logout" class="btn bg-slate-600 text-sm">Log out</button></div><button data-a="switch" class="btn bg-blue-600 text-sm">🔄 Switch account</button>${bioOK()?(bioGet()[S.me]?`<button data-a="bioOff" class="btn bg-slate-600 text-sm">🙂 Face ID is ON ✅ — turn off</button>`:`<button data-a="bioOn" class="btn bg-emerald-600 text-sm">🙂 Turn on Face ID login</button>`):""}`:`<button data-a="tab" data-v="login" class="btn bg-blue-600">Login / Register</button>`}
+ ${S.admin?`<button data-a="adm" class="btn bg-slate-600">Admin Mode 🔓 — Logout</button>`:`<button data-a="adm" class="text-xs text-slate-500 underline">Owner access</button>`}
+ <button data-a="tab" data-v="notes" class="btn bg-[#1a1c28] text-sm">🔔 Notifications (${unread()} new)</button></div>
+ ${settingsReq()}
+ <button data-a="tab" data-v="receivers" class="card p-5 w-full text-left flex justify-between"><span class="font-bold">👑 Receivers list</span><span class="text-slate-400">›</span></button>
+ <button data-a="tab" data-v="members" class="card p-5 w-full text-left flex justify-between"><span class="font-bold">👥 Members (${ms.length})</span><span class="text-slate-400">›</span></button>
+ ${S.admin?`<div class="card p-5 space-y-2"><h3 class="font-bold">📊 Reports</h3><button data-a="tab" data-v="reports" class="btn bg-slate-600">Open reports & export</button></div>
+ <div class="card p-5 space-y-2"><h3 class="font-bold">🔓 Level access</h3><button data-a="lockLv" class="btn ${S.lockLv?"bg-amber-500 text-black":"bg-emerald-600"}">${S.lockLv?"🔒 Levels need graduation — tap to open all":"🔓 All levels open — tap to require graduation"}</button></div>
+ <div class="card p-5 space-y-2"><h3 class="font-bold">💲 Level prices</h3>${TIERS.map((x,i)=>`<div class="row flex justify-between items-center px-4 py-2 text-sm"><span>${x[0]} · $${x[1]} / seat</span><button data-a="price" data-v="${i}" class="text-amber-400 font-bold">Edit</button></div>`).join("")}</div>
+ <div class="card p-5 space-y-3"><h3 class="font-bold">💾 Backup</h3><div class="grid grid-cols-2 gap-2"><button data-a="bkCopy" class="btn bg-slate-600">Copy backup</button><button data-a="bkRestore" class="btn bg-slate-600">Restore</button></div></div>
+ <div class="card p-5 space-y-3"><h3 class="font-bold">🔐 Security & data</h3><div class="grid grid-cols-2 gap-2"><button data-a="pin" class="btn bg-slate-600">Change admin PIN</button><button data-a="clear" class="btn bg-slate-600">Clear seats</button></div><button data-a="reset" class="btn bg-red-600">Reset all</button></div>`:""}
+ <div class="card p-5 text-sm text-slate-400 space-y-1"><h3 class="font-bold text-white">ℹ️ About</h3><div>Prime Circle · v2.4</div><div>${ms.length} members · ${S.rounds} full rounds · $${S.total} received</div><div>Data is saved on this device only.</div></div>`}
+
+function menuHtml(){if(!S.menu)return "";const m=me(),it=(a,v,i,l)=>`<button data-a="${a}" data-v="${v}" class="w-full text-left px-4 py-3 rounded-xl bg-[#1a1c28] flex justify-between"><span>${i} ${l}</span><span class="text-slate-500">›</span></button>`;
+ return `<div data-a="menu" class="fixed inset-0 z-40 bg-black/60"><div class="w-72 max-w-[85%] h-full bg-[#111320] border-r border-slate-700 p-4 space-y-2 overflow-y-auto" onclick="event.stopPropagation()"><div class="flex justify-between items-center mb-2"><div><div class="font-bold text-amber-400">Prime Circle</div><div class="text-xs text-slate-400">${m?esc(m.n)+" · "+idOf(m.n)+" · ":""}${role()}</div></div><button data-a="menu" class="text-2xl">✕</button></div>
+ ${it("tab","overview","▦","Overview")}${it("tab","levels","☰","Levels")}${it("tab","circle","◉","Circle")}${it("tab","payments","➕","Request a seat")}${it("tab","payments","▭","Payments")}${it("tab","notes","🔔","Notifications ("+unread()+")")}
+ ${it("tab","receivers","👑","Receivers list")}${it("tab","members","👥","Members")}${it("tab","more","⚙️","Settings")}${m?it("prof",S.me,"👤","My profile"):it("tab","login","👤","Login / Register")}
+ ${S.admin?it("tab","reports","📊","Reports & export"):""}${it("refresh","","⟳","Refresh")}
+ <div class="text-xs text-slate-400 pt-2 px-1">ACCOUNTS</div>
+ ${Object.values(S.mem).filter(x=>x.email).map(x=>it("pickAcc",esc(x.email),S.me===key(x.n)?"✅":"👤",esc(x.n)+(x.admin?" 🛡":""))).join("")}
+ ${m||S.admin?it("switch","","🔄","Switch account"):""}${S.admin?it("adm","","🔓","Admin logout"):it("adm","","🔑","Owner access")}${m?it("logout","","↩","Log out"):""}</div></div>`}
+const VIEWS={receivers:receiversView,members:membersView,circle,overview,levels,payments,more,notes,login,profile,reports};
+function render(){
+ $("view").innerHTML=(VIEWS[S.tab]||circle)();
+ if(S.tab==="notes")mine().forEach(x=>x.read=true);
+ $("nav").innerHTML=[["overview","▦"],["levels","☰"],["circle","◉"],["payments","▭"],["more","⚙️"]].map(a=>`<button data-a="tab" data-v="${a[0]}" class="px-3 py-1 rounded-2xl ${S.tab===a[0]?"bg-teal-900 text-cyan-300":"text-slate-400"}"><div class="text-xl">${a[1]}</div>${t(a[0])}</button>`).join("");
+ $("menu").innerHTML=menuHtml();
+ $("bell").textContent=unread();
+ $("who").textContent=(S.me||S.admin)?"Log out ("+(S.admin?"Admin":me()?me().n:"")+")":"Log in";
+ $("who").className="text-xs font-bold rounded-full px-3 py-1.5 "+((S.me||S.admin)?"bg-slate-600 text-white":"bg-amber-500 text-black");
+ save();
+}
+function finish(up){const T0=TIERS[S.tier],amt=T0[1]*N,r=waiting()[0];
+ if(!r)return toast("No receiver in the list");
+ if(!confirm("Has "+r.n+" confirmed receiving $"+amt+"?"))return;
+ r.got=true;S.total+=amt;S.rounds++;S.done.unshift({n:r.n,amt,tier:T0[0],type:up?"Graduate":"Approved",d:today()});LV().seats=[];
+ let msg="";note(key(r.n),"You received $"+amt+" in "+T0[0]+" ✅");
+ if(up){if(S.tier<TIERS.length-1){const k=key(r.n),old=S.access[k];S.access[k]={n:r.n,l:Math.max(old?old.l:0,S.tier+1)};msg=r.n+" unlocked "+TIERS[S.tier+1][0]+" 🔓";note(k,"You unlocked "+TIERS[S.tier+1][0]+" 🔓")}else msg=r.n+" completed the top level 🏆"}
+ const nx=waiting()[0];if(nx)note(key(nx.n),"You are now the receiver 👑 in "+T0[0]);
+ log(r.n+" "+(up?"Graduate 🚀":"Approved ✅")+" $"+amt+(msg?" → "+msg:"")+(nx?" | Next: "+nx.n:""));
+ toast(msg||(nx?"Next: "+nx.n+" 👑":"No one else in the list"));render()}
+
+const bioGet=()=>{try{return JSON.parse(localStorage.getItem("pcBio"))||{}}catch(e){return {}}};
+const bioSet=o=>{try{localStorage.setItem("pcBio",JSON.stringify(o))}catch(e){}};
+const b2s=b=>btoa(String.fromCharCode(...new Uint8Array(b))),s2b=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+const bioOK=()=>!!(window.PublicKeyCredential&&navigator.credentials&&window.crypto);
+async function bioEnable(){if(!bioOK())return toast("Face ID is not supported in this browser");const k=S.me;if(!k||!S.mem[k])return toast("Log in first");
+ try{const c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"Prime Circle"},user:{id:new TextEncoder().encode(k).slice(0,64),name:S.mem[k].email||k,displayName:S.mem[k].n},pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required"},timeout:60000}});
+  const o=bioGet();o[k]=b2s(c.rawId);bioSet(o);toast("Face ID turned on ✅");render()}catch(e){toast("Face ID was cancelled or is not available")}}
+async function bioLogin(k){const o=bioGet();if(!o[k])return toast("Face ID is not set up for this account");
+ try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:s2b(o[k]),transports:["internal"]}],userVerification:"required",timeout:60000}});
+  const r=S.mem[k];if(!r)return toast("Account not found");S.me=k;S.pick="";if(r.admin)S.admin=true;S.tab="more";toast("Welcome "+r.n+" ✅");render()}catch(e){toast("Face ID failed or was cancelled")}}
+function backToReview(li,k){const l=S.lv[li],i=l.joined.findIndex(x=>!x.got&&key(x.n)===k);if(i<0)return toast("Not in the paid list");const n=l.joined[i].n;
+ let seat=l.seats.find(x=>key(x.n)===k);
+ if(!seat){if(l.seats.length>=N)return toast("Seats are full — remove someone first");const id=++S.pid;seat={n,s:"review",ref:"—",pid:id};l.seats.push(seat);S.pay.push({id,n,tier:TIERS[li][0],amt:TIERS[li][1],ref:"—",d:today(),st:"requested"})}
+ else{seat.s="review";const pr=payRec(seat.pid);if(pr)pr.st="requested"}
+ l.joined.splice(i,1);note(k,"Your payment is back in review ⏳ ("+TIERS[li][0]+") — please send your payment reference");log(n+" moved back to review ("+TIERS[li][0]+")");toast(n+" is back in review ⏳")}
+function approveSeat(i){const p=seats()[i];p.s="paid";joinPush(p);const pr=payRec(p.pid);if(pr)pr.st="approved";note(key(p.n),"Your payment was confirmed ✅ ("+TIERS[S.tier][0]+")");if(paid()>=N)note("staff",TIERS[S.tier][0]+" is full — receiver can confirm receipt");log(p.n+" confirmed ("+TIERS[S.tier][0]+")")}
+function rejectSeat(i){const p=seats().splice(i,1)[0];const pr=payRec(p.pid);if(pr)pr.st="rejected";note(key(p.n),"Your request was rejected ✖ ("+TIERS[S.tier][0]+")");log(p.n+" rejected ✖")}
+const canAct=li=>S.admin||!!(S.me&&(()=>{const w=S.lv[li].joined.find(x=>!x.got);return w&&key(w.n)===S.me})());
+function settingsReq(){const rq=[],pd=[];S.lv.forEach((l,li)=>l.seats.forEach((p,i)=>{(p.s==="review"?rq:pd).push([p,li,i])}));
+ const mineP=S.me?S.pay.filter(p=>key(p.n)===S.me):[],stl=x=>x==="approved"?"✓ Paid & confirmed":x==="rejected"?"✖ Rejected":x==="cancelled"?"Cancelled":"⏳ In review";
+ const any=S.admin||(S.me&&isRecvOf(S.me));
+ return (any?`<div class="card p-5 space-y-3"><h3 class="font-bold text-amber-400">📋 Requests & approvals</h3>
+ <div class="text-sm text-slate-400">Only people whose payment you confirm join the Receivers list. Everyone else stays <b>in review</b>.</div>
+ <h3 class="font-bold">⏳ In review (${rq.length})</h3>
+ ${rq.map(([p,li,i])=>`<div class="row flex justify-between items-center px-4 py-2"><span>${esc(p.n)} ${idTag(p.n)}<br><span class="text-xs text-slate-400">${TIERS[li][0]} · ref: ${esc(p.ref||"—")}</span></span>${canAct(li)?`<span class="flex gap-1"><button data-a="okS" data-v="${li},${i}" class="bg-emerald-500 px-3 py-1 rounded-full text-sm font-bold">✔ Confirm</button><button data-a="rejS" data-v="${li},${i}" class="bg-red-600 px-3 py-1 rounded-full text-sm font-bold">✖</button></span>`:`<span class="text-slate-400 text-sm">⏳ In review</span>`}</div>`).join("")||`<p class="text-slate-500 text-sm">Nobody yet</p>`}
+ <h3 class="font-bold pt-2">✅ Paid & confirmed (${pd.length})</h3>
+ ${pd.map(([p,li])=>`<div class="row flex justify-between px-4 py-2 text-sm"><span>✓ ${esc(p.n)} ${idTag(p.n)}<br><span class="text-xs text-slate-400">${TIERS[li][0]}</span></span>${canAct(li)?`<button data-a="toRev" data-v="${li}|${esc(key(p.n))}" class="bg-amber-500 text-black px-3 py-1 rounded-full text-xs font-bold">↩ Review</button>`:""}</div>`).join("")||`<p class="text-slate-500 text-sm">Nobody yet</p>`}</div>`:"")
+ +(S.me?`<div class="card p-5 space-y-2"><h3 class="font-bold">🧾 My requests</h3>${mineP.map(p=>`<div class="row flex justify-between px-4 py-2 text-sm"><span>${esc(p.tier)} · $${p.amt}<br><span class="text-xs text-slate-400">ref ${esc(p.ref||"—")}</span></span><span class="${p.st==="approved"?"text-emerald-400":p.st==="rejected"?"text-red-400":"text-amber-400"}">${stl(p.st)}</span></div>`).join("")||`<p class="text-slate-500 text-sm">No requests yet</p>`}</div>`:"")}
+function refresh(quiet){try{const o=JSON.parse(localStorage.getItem(KEY));if(o&&o.lv){const keep={menu:false,admin:S.admin,tab:S.tab,me:S.me,pv:S.pv,q:S.q};S=Object.assign(o,keep);ensure();applyPrices()}}catch(e){}
+ render();if(!quiet){const r=$("rf");r.style.transition="transform .5s";r.style.transform="rotate(360deg)";setTimeout(()=>{r.style.transition="none";r.style.transform=""},520);toast("Refreshed ✅")}}
+window.addEventListener("storage",e=>{if(e.key===KEY)refresh(true)});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh(true)});
+function reqMsg(n,li,ref){return "PRIME CIRCLE — SEAT REQUEST\nID: "+idOf(n)+"\nName: "+n+"\nLevel: "+TIERS[li][0]+" ($"+TIERS[li][1]+")\nRef: "+ref+"\nCode: PCREQ|"+n+"|"+TIERS[li][0]+"|"+ref}
+function importReq(txt){const m=String(txt).match(/PCREQ\|([^|\n]+)\|([^|\n]+)\|([^\n]*)/);if(!m)return "Invalid request message";
+ const n=m[1].trim(),li=TIERS.findIndex(x=>x[0]===m[2].trim()),ref=m[3].trim();if(li<0)return "Unknown level";
+ const L2=S.lv[li];if(L2.seats.some(x=>key(x.n)===key(n)))return n+" is already in "+TIERS[li][0];if(L2.seats.length>=N)return "Seats are full";
+ const id=++S.pid;L2.seats.push({n,s:"review",ref,pid:id});S.pay.push({id,n,tier:TIERS[li][0],amt:TIERS[li][1],ref,d:today(),st:"requested"});idOf(n);
+ note("staff",n+" requested a seat in "+TIERS[li][0]+" (ref "+ref+")");log(n+" request imported ("+TIERS[li][0]+")");S.tier=li;return ""}
+const csv=rows=>rows.map(r=>r.map(c=>'"'+String(c==null?"":c).replace(/"/g,'""')+'"').join(",")).join("\n");
+const payCsv=()=>csv([["Date","Name","Level","Amount","Reference","Status"],...S.pay.map(p=>[p.d,p.n,p.tier,p.amt,p.ref,p.st])]);
+function dl(name,text){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv"}));a.download=name;document.body.appendChild(a);a.click();a.remove()}catch(e){prompt("Copy this:",text)}}
+
+document.addEventListener("input",e=>{if(e.target.id==="mq"){S.q=e.target.value;$("mlist").innerHTML=memberRows()}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,v=b.dataset.v;
+ if(a==="menu"){S.menu=!S.menu;render();return}
+ S.menu=false;
+ if(a==="tab")S.tab=v;
+ else if(a==="hdr"){if(S.me||S.admin){S.me=null;S.admin=false;S.tab="circle";toast("Logged out")}else S.tab="login"}
+ else if(a==="shareWa"){window.open("https://wa.me/?text="+encodeURIComponent(S.last||""),"_blank");return}
+ else if(a==="copyReq"){const j=S.last||"";(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>toast("Copied ✅")).catch(()=>prompt("Copy this:",j));return}
+ else if(a==="closeLast"){S.last=null}
+ else if(a==="impReq"){if(!needStaff())return;const x=prompt("Paste the request message here:");if(!x)return;const err=importReq(x);if(err)return toast(err);toast("Request added ✅")}
+ else if(a==="refresh"){refresh();return}
+ else if(a==="lvl"){S.tier=+v;if(S.tab==="levels")S.tab="circle";if(!unlocked(S.tier))toast("🔒 Locked: only graduates from "+TIERS[S.tier-1][0]+" can join")}
+ else if(a==="approve"){if(!needStaff())return;return finish(false)}
+ else if(a==="grad"){if(!needStaff())return;return finish(true)}
+ else if(a==="adm"){if(S.admin)S.admin=false;else{const p=prompt("Owner PIN:");if(p===null)return;if(p!==S.pin)return toast("Wrong PIN ❌");S.admin=true}}
+ else if(a==="login"){const id=$("lEmail").value.trim().toLowerCase(),r=Object.values(S.mem).find(x=>(x.email||"").toLowerCase()===id)||S.mem[id];if(!id)return toast("Enter your email");if(!r||String(r.pin).trim()!==$("lPin").value.trim())return toast("Wrong email or password ❌");S.me=key(r.n);S.pick="";if(r.admin)S.admin=true;S.tab="more";toast("Welcome "+r.n+(r.admin?" 🛡 Admin":""))}
+ else if(a==="register"){const n=$("lName").value.trim(),em=$("lEmail").value.trim().toLowerCase(),p=$("lPin").value.trim();if(!n)return toast("Enter your full name");if(!/^\S+@\S+\.\S+$/.test(em))return toast("Enter a valid email");if(Object.values(S.mem).some(x=>(x.email||"").toLowerCase()===em))return toast("This email already has an account");if(p.length<6)return toast("Password must be 6+ characters");if(S.mem[key(n)])return toast("This name already has an account");S.mem[key(n)]={n,email:em,pin:p,d:today()};S.me=key(n);S.tab="more";log(n+" registered");toast("Account created ✅ Your ID: "+idOf(n))}
+ else if(a==="toRev"){const j=v.indexOf("|"),li=+v.slice(0,j),k=v.slice(j+1);if(!canAct(li))return toast("Only the admin or this level's receiver can do this");backToReview(li,k)}
+ else if(a==="bioOn"){bioEnable();return}
+ else if(a==="bioIn"){bioLogin(v);return}
+ else if(a==="bioOff"){const o=bioGet();delete o[S.me];bioSet(o);toast("Face ID turned off")}
+ else if(a==="pickAcc"){S.pick=v;S.tab="login"}
+ else if(a==="switch"){S.me=null;S.admin=false;S.pick="";S.tab="login"}
+ else if(a==="logout"){S.me=null;S.admin=false;toast("Logged out")}
+ else if(a==="prof"){S.pv=v;S.tab="profile"}
+ else if(a==="ok"){if(!needStaff())return;approveSeat(+v)}
+ else if(a==="okS"||a==="rejS"){const [li,i]=v.split(",").map(Number),old=S.tier;S.tier=li;if(!needStaff()){S.tier=old;return}if(a==="okS")approveSeat(i);else rejectSeat(i);S.tier=old}
+ else if(a==="rej"){if(!needStaff())return;rejectSeat(+v)}
+ else if(a==="addG"){const n=$("gName").value.trim(),ref=($("gRef")?$("gRef").value.trim():"");
+  if(v==="paid"&&!needAdmin())return;if(!n)return toast("Enter a name");
+  if(v==="review"&&!ref)return toast("Enter your payment reference");
+  if(!canJoin(n,S.tier))return toast("🔒 "+n+" must graduate from "+TIERS[S.tier-1][0]+" first");
+  if(seats().some(s=>key(s.n)===key(n))||LV().joined.some(x=>!x.got&&key(x.n)===key(n)))return toast(n+" is already in this level");
+  if(seats().length>=N)return toast("Seats are full");
+  const id=++S.pid,p={n,s:v,ref:ref||"admin",pid:id};seats().push(p);
+  S.pay.push({id,n,tier:TIERS[S.tier][0],amt:TIERS[S.tier][1],ref:ref||"admin",d:today(),st:v==="paid"?"approved":"requested"});
+  if(v==="paid")joinPush(p);else{note("staff",n+" requested a seat in "+TIERS[S.tier][0]+" (ref "+ref+")");S.last=reqMsg(n,S.tier,ref)}
+  log(n+(v==="paid"?" paid":" requested")+" ("+TIERS[S.tier][0]+")");toast(v==="paid"?"✓":"Request sent ✅")}
+ else if(a==="rmR"){if(!needAdmin())return;const x=LV().joined.splice(+v,1)[0];S.done.unshift({n:x.n,amt:0,tier:TIERS[S.tier][0],type:"Removed",d:today()});log(x.n+" removed")}
+ else if(a==="addM"){if(!needAdmin())return;const n=$("mName").value.trim(),em=$("mEmail").value.trim().toLowerCase(),p=$("mPin").value.trim();
+  if(!n)return toast("Enter the full name");if(!/^\S+@\S+\.\S+$/.test(em))return toast("Enter a valid email");if(p.length<6)return toast("Password must be 6+ characters");
+  if(S.mem[key(n)]&&S.mem[key(n)].email)return toast("This member already has an account");
+  if(Object.values(S.mem).some(x=>(x.email||"").toLowerCase()===em))return toast("This email is already used");
+  S.mem[key(n)]={n,email:em,pin:p,d:today()};log(n+" added as member ("+idOf(n)+")");toast("Member added ✅ "+idOf(n))}
+ else if(a==="setM"){if(!needAdmin())return;const r=S.mem[v],nm=(people().find(x=>key(x.n)===v)||{}).n||v;const em=prompt("Email for "+nm+":",r?r.email||"":"");if(em===null)return;const e2=em.trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(e2))return toast("Enter a valid email");
+  if(Object.entries(S.mem).some(([k2,x])=>k2!==v&&(x.email||"").toLowerCase()===e2))return toast("This email is already used");
+  const pn=prompt("New password for "+nm+" (6+ characters, empty = keep):","");if(pn===null)return;if(pn&&pn.length<6)return toast("Password must be 6+ characters");
+  const cur0=r||{n:nm,pin:"",d:today()};if(!r&&!pn)return toast("Set a password for this new account");S.mem[v]=Object.assign(cur0,{email:e2},pn?{pin:pn}:{});log("Account updated for "+nm);toast("Saved ✅")}
+ else if(a==="mkAdm"){if(!needAdmin())return;const r=S.mem[v];if(!r)return toast("This member has no account");r.admin=!r.admin;log(r.n+(r.admin?" made admin":" admin rights removed"));toast(r.admin?"Admin rights given 🛡":"Admin rights removed")}
+ else if(a==="delM"){if(!needAdmin())return;if(!confirm("Remove "+v+" from all levels?"))return;S.lv.forEach(l=>{l.joined=l.joined.filter(x=>key(x.n)!==v);l.seats=l.seats.filter(s=>key(s.n)!==v)});delete S.access[v];delete S.mem[v];if(S.me===v)S.me=null;log(v+" removed from members");S.tab="more"}
+ else if(a==="lockLv"){if(!needAdmin())return;S.lockLv=!S.lockLv;log(S.lockLv?"Levels locked (graduates only)":"All levels opened")}
+ else if(a==="price"){if(!needAdmin())return;const p=prompt("New seat price for "+TIERS[+v][0]+" ($):",TIERS[+v][1]);if(p===null)return;const n=Number(p);if(!(n>0))return toast("Enter a valid price");S.prices[+v]=n;applyPrices();log(TIERS[+v][0]+" price set to $"+n)}
+ else if(a==="bkCopy"){if(!needAdmin())return;const j=JSON.stringify(S);(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>toast("Backup copied ✅")).catch(()=>prompt("Copy this backup:",j));return}
+ else if(a==="bkRestore"){if(!needAdmin())return;const p=prompt("Paste your backup here:");if(!p)return;try{const o=JSON.parse(p);if(!Array.isArray(o.lv)||typeof o.tier!=="number")throw 0;S=o;ensure();S.admin=true;applyPrices();toast("Backup restored ✅")}catch(x){return toast("Invalid backup ❌")}}
+ else if(a==="csvPay"){if(!needAdmin())return;dl("payments.csv",payCsv());return}
+ else if(a==="csvMem"){if(!needAdmin())return;dl("members.csv",csv([["ID","Name","Email","Role","Levels"],...members().map(m=>[idOf(m.n),m.n,(S.mem[key(m.n)]||{}).email||"",isRecvOf(key(m.n))?"Receiver":"Giver",Object.entries(m.lv).map(([i,s])=>TIERS[i][0]+":"+s).join(" | ")])]));return}
+ else if(a==="csvCopy"){if(!needAdmin())return;const j=payCsv();(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>toast("Copied ✅")).catch(()=>prompt("Copy this:",j));return}
+ else if(a==="print"){window.print();return}
+ else if(a==="nClear"){S.notes=S.notes.filter(x=>!mine().includes(x))}
+ else if(a==="clear"){if(!needAdmin())return;S.pay.forEach(p=>{if(p.st==="requested"&&p.tier===TIERS[S.tier][0])p.st="cancelled"});LV().seats=[];log("Seats cleared")}
+ else if(a==="pin"){if(!needAdmin())return;const p=prompt("New admin PIN (4+ digits):");if(p&&/^\d{4,}$/.test(p)){S.pin=p;toast("PIN changed ✅")}}
+ else if(a==="reset"){if(!needAdmin())return;if(!confirm("Reset everything? (accounts are kept)"))return;const pin=S.pin,pr=S.prices,mem=S.mem,nums=S.nums,nn=S.nextNo;S=fresh();S.pin=pin;S.prices=pr;S.mem=mem;S.nums=nums;S.nextNo=nn;S.admin=true;S.total=0;S.rounds=0;S.lv=TIERS.map(()=>({seats:[],joined:[]}));S.pay=[];S.pid=0;S.tab="more"}
+ render()});
+render();
+window.PC2=1;
+
