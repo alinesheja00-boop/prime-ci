@@ -2,6 +2,9 @@
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Prime Circle - P2P Gifting & Matrix System</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Prime Circle">
+<meta name="theme-color" content="#111320">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <style>
 body{background:#0f1220;color:#fff;font-family:-apple-system,system-ui,sans-serif}
@@ -12,88 +15,31 @@ body{background:#0f1220;color:#fff;font-family:-apple-system,system-ui,sans-seri
 .seat.review{background:#3b3a22;border-color:#facc15}
 .btn{border-radius:14px;padding:12px;font-weight:700;width:100%}
 .in{background:#1a1c28;border:1px solid #444;border-radius:12px;padding:10px;width:100%}
+@media print{header,nav,button{display:none!important}body{background:#fff;color:#000}.card{background:#fff;border:1px solid #999}}
 </style></head>
 <body class="pb-24">
 <header class="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-[#111320] border-b border-slate-700">
-  <div class="flex items-center gap-2 text-xl font-bold"><span class="w-8 h-8 rounded-full border-2 border-amber-400 flex items-center justify-center"><i class="w-3 h-3 rounded-full bg-amber-400"></i></span><span>Prime <span class="text-amber-400">Circle</span></span></div>
+  <div class="flex items-center gap-2 text-xl font-bold"><button data-a="menu" class="text-2xl mr-1" aria-label="Menu">☰</button><span class="w-8 h-8 rounded-full border-2 border-amber-400 flex items-center justify-center"><i class="w-3 h-3 rounded-full bg-amber-400"></i></span><span>Prime <span class="text-amber-400">Circle</span></span></div>
   <div class="flex items-center gap-3">
-    <div class="flex bg-black/40 rounded-full p-1 text-sm font-bold"><button data-a="lang" data-v="en" id="bEn" class="px-3 py-1 rounded-full">EN</button><button data-a="lang" data-v="rw" id="bRw" class="px-3 py-1 rounded-full">RW</button></div>
-    <div class="relative text-2xl">🔔<span id="bell" class="absolute -top-1 -right-2 bg-amber-500 text-xs rounded-full px-1.5">0</span></div>
+    <button data-a="refresh" id="rf" class="text-xl" title="Refresh">⟳</button>
+    <button data-a="hdr" id="who" class="text-xs font-bold rounded-full px-3 py-1.5 bg-amber-500 text-black"></button>
+    <button data-a="tab" data-v="notes" class="relative text-2xl">🔔<span id="bell" class="absolute -top-1 -right-2 bg-amber-500 text-xs rounded-full px-1.5">0</span></button>
   </div>
 </header>
 <main id="view" class="p-4 space-y-4 max-w-md mx-auto"></main>
 <nav class="fixed bottom-0 inset-x-0 bg-[#111320] border-t border-slate-700 flex justify-around py-2 text-xs" id="nav"></nav>
+<div id="menu"></div>
 <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-2 rounded-full text-sm font-semibold hidden z-50"></div>
+<script src="app1.js"></script>
+<script src="app2.js"></script>
+<script src="app7.js?v=2"></script>
+<script src="app8.js"></script>
+<script src="app9.js"></script>
 <script>
-const TIERS=[["Bronze",25],["Silver",50],["Gold",100],["Platinum",200],["Diamond",400]],N=8,KEY="primeCircleV2";
-const L={en:{overview:"Overview",levels:"Levels",circle:"Circle",payments:"Payments",more:"More",received:"Received",review:"In review",rounds:"Full rounds",givers:"Givers list",paid:"Paid",pend:"In review",empty:"Empty",seats:"seats paid",app:"Approved Receive ✅",grad:"Receiver Confirm & Graduate 🚀",admin:"Admin Panel",recv:"RECEIVER",level:"LEVEL"},
-rw:{overview:"Incamake",levels:"Ibyiciro",circle:"Uruziga",payments:"Kwishyura",more:"Ibindi",received:"Yakiriwe",review:"Birasuzumwa",rounds:"Ibyuzuye",givers:"Urutonde rw'abatanga",paid:"Yishyuye",pend:"Irasuzumwa",empty:"Ubusa",seats:"seats zishyuwe",app:"Yemeje Kwakira ✅",grad:"Receiver Yemeje & Azamuke 🚀",admin:"Admin Panel",recv:"UWAKIRA",level:"ICYICIRO"}};
-let S=load()||{tab:"circle",lang:"en",tier:0,total:200,rounds:1,pin:"1234",admin:false,queue:["Prime"],hist:[],
- seats:["Eliora","Jasher","Vandame","Ineza","Jay","Ivan","Kevin","Irene"].map(n=>({n,s:"paid"}))};
-function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const t=k=>L[S.lang][k],$=id=>document.getElementById(id);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const toast=m=>{const e=$("toast");e.textContent=m;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2300)};
-const log=m=>{S.hist.unshift(new Date().toLocaleString()+" — "+m);S.hist=S.hist.slice(0,12)};
-const paid=()=>S.seats.filter(x=>x.s==="paid").length,rev=()=>S.seats.filter(x=>x.s==="review").length,cur=()=>S.queue[0]||"—";
-const needAdmin=()=>S.admin||(toast("Admin Mode: More → Admin"),false);
-
-function ring(){let h="";for(let i=0;i<N;i++){const a=(-90+i*45)*Math.PI/180,x=150+120*Math.cos(a)-28,y=150+120*Math.sin(a)-28,p=S.seats[i];
- h+=`<div class="seat ${p?(p.s==="review"?"review":""):"empty"}" style="left:${x}px;top:${y}px">${p?esc(p.n[0].toUpperCase()):""}</div>`}return h}
-function stats(){return `<div class="grid grid-cols-3 gap-2 text-center">${[[t("received"),"$"+S.total],[t("review"),rev()],[t("rounds"),S.rounds]].map(a=>`<div class="bg-[#1a1c28] rounded-2xl py-3"><div class="text-xs text-slate-400">${a[0]}</div><div class="text-xl font-bold">${a[1]}</div></div>`).join("")}</div>`}
-function givers(){return `<h3 class="font-bold mt-2">${t("givers")}</h3><div class="space-y-2">${Array.from({length:N},(_,i)=>{const p=S.seats[i];return `<div class="row flex justify-between px-4 py-3"><span><span class="text-slate-500 font-mono mr-2">${i+1}.</span>${p?esc(p.n):"—"}</span><span class="${p&&p.s==="paid"?"text-amber-400":"text-slate-500"}">${p?(p.s==="paid"?"✓ "+t("paid"):"⏳ "+t("pend")):t("empty")}</span></div>`}).join("")}</div>`}
-
-function circle(){const T0=TIERS[S.tier],full=paid()>=N;
- return `<div class="card p-5"><div class="flex justify-between items-end"><div><div class="text-cyan-300 text-xs tracking-widest">${t("level")} ${S.tier+1}</div><div class="text-2xl font-bold">${T0[0]}</div><div class="text-slate-400">$${T0[1]} / seat</div></div><div class="text-right"><div class="text-3xl font-bold text-cyan-300">${paid()}/${N}</div><div class="text-xs text-slate-400">${t("seats")}</div></div></div>
- <div class="relative mx-auto my-4" style="width:300px;height:300px"><div class="absolute rounded-full border-2 border-dashed border-amber-700" style="inset:30px"></div>${ring()}
- <div class="absolute rounded-full bg-[#f19e4a] text-black text-center flex flex-col items-center justify-center" style="width:130px;height:130px;left:85px;top:85px">👑<b>${esc(cur())}</b><span class="text-xs">${t("recv")}</span></div></div>
- ${stats()}${givers()}
- ${full?`<div class="space-y-2 mt-4"><button data-a="approve" class="btn bg-emerald-500">${t("app")}</button><button data-a="grad" class="btn bg-gradient-to-r from-amber-400 to-orange-500 text-black">${t("grad")}</button></div>`:""}</div>`}
-
-function overview(){return `<div class="card p-5 space-y-3"><div class="text-slate-400">Prime Circle</div><div class="text-4xl font-bold text-amber-400">$${S.total}</div>${stats()}<div class="text-sm text-slate-300">${TIERS[S.tier][0]} · ${paid()}/${N}</div><h3 class="font-bold">History</h3><ul class="text-xs text-slate-300 space-y-1">${S.hist.map(h=>`<li>• ${esc(h)}</li>`).join("")||"<li class='text-slate-500'>—</li>"}</ul></div>`}
-
-function levels(){return TIERS.map((x,i)=>`<div class="card p-4 flex justify-between items-center ${i===S.tier?"border-cyan-400":""}"><div><div class="text-xs text-cyan-300">${t("level")} ${i+1}</div><div class="text-xl font-bold">${x[0]}</div></div><div class="text-right"><div>$${x[1]} × ${N} = <b>$${x[1]*N}</b></div><div class="text-xs text-slate-400">${i<S.tier?"✅":i===S.tier?"● Active":"🔒"}</div></div></div>`).join("")}
-
-function payments(){return `<div class="card p-5 space-y-3"><h3 class="font-bold">${t("payments")}</h3>
- ${S.seats.map((p,i)=>`<div class="row flex justify-between items-center px-4 py-2"><span>${i+1}. ${esc(p.n)}</span>${p.s==="review"?`<button data-a="ok" data-v="${i}" class="bg-emerald-500 px-3 py-1 rounded-full text-sm font-bold">Approve</button>`:`<span class="text-amber-400">✓ ${t("paid")}</span>`}</div>`).join("")||"<p class='text-slate-500'>—</p>"}
- ${S.admin?`<div class="pt-2 space-y-2"><input id="gName" class="in" placeholder="Izina rya giver"><div class="grid grid-cols-2 gap-2"><button data-a="addG" data-v="review" class="btn bg-blue-600">+ In review</button><button data-a="addG" data-v="paid" class="btn bg-emerald-600">+ Paid</button></div></div>`:`<p class="text-xs text-slate-500">Admin gusa niwe wongeraho abatanga.</p>`}</div>`}
-
-function more(){return `<div class="card p-5 space-y-3"><h3 class="font-bold text-amber-400">🛠 ${t("admin")}</h3>
- <button data-a="adm" class="btn ${S.admin?"bg-slate-600":"bg-amber-500 text-black"}">${S.admin?"Admin Mode 🔓 — Logout":"Admin Mode 🔒 — Login"}</button>
- ${S.admin?`<div><div class="text-xs text-slate-400 mb-1">Receivers (uwa mbere ni Active)</div><div class="flex gap-2"><input id="rName" class="in" placeholder="Izina"><button data-a="addR" class="bg-amber-500 text-black font-bold px-4 rounded-xl">+</button></div>
- <ul class="mt-2 space-y-1 text-sm">${S.queue.map((n,i)=>`<li class="row flex justify-between px-4 py-2"><span>${i?i+1+". ":"👑 "}${esc(n)}</span><button data-a="rmR" data-v="${i}" class="text-red-400 text-xs">Kuraho</button></li>`).join("")}</ul></div>
- <select id="tSel" class="in">${TIERS.map((x,i)=>`<option value="${i}" ${i===S.tier?"selected":""}>${x[0]} — $${x[1]}</option>`).join("")}</select>
- <div class="grid grid-cols-2 gap-2"><button data-a="clear" class="btn bg-slate-600">Siba seats</button><button data-a="pin" class="btn bg-slate-600">Hindura PIN</button></div>
- <button data-a="reset" class="btn bg-red-600">Reset byose</button>`:`<p class="text-xs text-slate-500">PIN y'ibanze: 1234</p>`}</div>`}
-
-function render(){
- $("view").innerHTML={circle,overview,levels,payments,more}[S.tab]();
- $("nav").innerHTML=[["overview","▦"],["levels","☰"],["circle","◉"],["payments","▭"],["more","⋯"]].map(a=>`<button data-a="tab" data-v="${a[0]}" class="px-3 py-1 rounded-2xl ${S.tab===a[0]?"bg-teal-900 text-cyan-300":"text-slate-400"}"><div class="text-xl">${a[1]}</div>${t(a[0])}</button>`).join("");
- $("bEn").className="px-3 py-1 rounded-full "+(S.lang==="en"?"bg-slate-700":"text-slate-400");$("bRw").className="px-3 py-1 rounded-full "+(S.lang==="rw"?"bg-slate-700":"text-slate-400");
- $("bell").textContent=rev();save();
- const ts=$("tSel");if(ts)ts.onchange=e=>{S.tier=+e.target.value;S.seats=[];log("Level: "+TIERS[S.tier][0]);render()};
-}
-function finish(up){const T0=TIERS[S.tier],amt=T0[1]*N,who=cur();
- if(!confirm(who+" yemeje ko yakiriye $"+amt+"?"))return;
- S.total+=amt;S.rounds++;S.queue.shift();S.seats=[];if(up&&S.tier<TIERS.length-1)S.tier++;
- log(who+" "+(up?"Graduate 🚀":"Approved ✅")+" $"+amt+(S.queue[0]?" → Next: "+S.queue[0]:""));
- toast(S.queue[0]?"Ukurikira: "+S.queue[0]+" 👑":"Ongeraho receiver mushya");render()}
-
-document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,v=b.dataset.v;
- if(a==="tab")S.tab=v;
- else if(a==="lang")S.lang=v;
- else if(a==="approve"){if(!needAdmin())return;return finish(false)}
- else if(a==="grad"){if(!needAdmin())return;return finish(true)}
- else if(a==="adm"){if(S.admin)S.admin=false;else{const p=prompt("Admin PIN:");if(p===null)return;if(p!==S.pin)return toast("PIN siyo ❌");S.admin=true}}
- else if(a==="ok"){if(!needAdmin())return;S.seats[+v].s="paid";log(S.seats[+v].n+" yemejwe")}
- else if(a==="addG"){if(!needAdmin())return;const n=$("gName").value.trim();if(!n)return toast("Andika izina");if(S.seats.length>=N)return toast("Seats zuzuye");S.seats.push({n,s:v});log(n+" yongewe ("+v+")")}
- else if(a==="addR"){const n=$("rName").value.trim();if(!n)return;S.queue.push(n);log(n+" yongewe ku Receivers")}
- else if(a==="rmR")S.queue.splice(+v,1);
- else if(a==="clear"){S.seats=[];log("Seats zasibwe")}
- else if(a==="pin"){const p=prompt("PIN nshya (imibare 4+):");if(p&&/^\d{4,}$/.test(p)){S.pin=p;toast("PIN yahindutse ✅")}}
- else if(a==="reset"){if(!confirm("Reset byose?"))return;S={...S,tier:0,total:0,rounds:0,queue:[],seats:[],hist:[]}}
- render()});
-render();
+(function(){var v=document.getElementById("view");
+if(!window.PC1)v.innerHTML='<div style="padding:20px;color:#fbbf24">app1.js is missing or incomplete. Re-upload app1.js</div>';
+else if(!window.PC2)v.innerHTML='<div style="padding:20px;color:#fbbf24">app2/3/4.js is missing or incomplete. Re-upload app2.js, app3.js, app4.js</div>';
+else if(!window.PC7)v.innerHTML='<div style="padding:20px;color:#fbbf24">app7.js is missing or incomplete. Re-upload app7.js</div>';
+else if(!window.PC8)v.innerHTML='<div style="padding:20px;color:#fbbf24">app8.js is missing or incomplete. Re-upload app8.js</div>';
+else if(!window.PC9)v.innerHTML='<div style="padding:20px;color:#fbbf24">app9.js is missing or incomplete. Re-upload app9.js</div>';})();
 </script></body></html>
-
