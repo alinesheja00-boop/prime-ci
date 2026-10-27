@@ -41,5 +41,17 @@ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.c
   if(l.seats.some(function(x){return key(x.n)===k})||l.joined.some(function(x){return !x.got&&key(x.n)===k})){p.st="rejected";return}
   l.seats.push({n:p.n,s:"review",ref:p.ref||"-",pid:p.id});p.st="requested";n++});
  log("Restored "+n+" requests");toast(n?"Restored "+n+" request(s) ✅":"Nothing to restore");if(window.sortQ)sortQ();render()});
+var _ml=menuHtml;menuHtml=function(){return _ml().replace('<div class="text-xs text-slate-400 pt-2 px-1">ACCOUNTS</div>','').replace(/<button data-a="pickAcc"[\s\S]*?<\/button>/g,'')};
+VIEWS.login=function(){var bio=Object.values(S.mem).filter(function(x){return x.email&&bioGet()[key(x.n)]}).map(function(a){return '<button data-a="bioIn" data-v="'+esc(key(a.n))+'" class="btn bg-emerald-600">🙂 Log in with Face ID - '+esc(a.n)+'</button>'}).join("");
+ return '<div class="card p-5 space-y-3"><h3 class="font-bold">👤 Log in</h3>'+bio+'<input id="lEmail" class="in" placeholder="Your name or email" autocapitalize="off" autocomplete="username"><input id="lPin" class="in" type="password" placeholder="PIN (4+ digits) or password" autocomplete="current-password"><button data-a="login" class="btn bg-emerald-600">Log in</button>'
+ +'<div class="border-t border-slate-700 pt-3 space-y-2"><div class="font-bold text-sm text-amber-400">New here? Create an account</div><input id="rName" class="in" placeholder="Full name"><input id="rEmail" class="in" type="email" placeholder="Email" autocapitalize="off" inputmode="email"><input id="rPin" class="in" type="password" placeholder="Choose a PIN (4+ digits)"><button data-a="register" class="btn bg-blue-600">Create account</button></div>'
+ +'<button data-a="adm" class="btn bg-slate-700 text-sm">🔑 Owner access (owner PIN)</button></div>'};
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest('[data-a="register"]');if(!b)return;e.stopPropagation();S.menu=false;
+ var g=function(i){var x=document.getElementById(i);return x?x.value.trim():""},n=g("rName"),em=g("rEmail").toLowerCase(),p=g("rPin");
+ if(!n)return toast("Enter your full name");if(!/^\S+@\S+\.\S+$/.test(em))return toast("Enter a valid email");if(p.length<4)return toast("PIN must be 4+ characters");
+ if(Object.values(S.mem).some(function(x){return (x.email||"").toLowerCase()===em}))return toast("This email already has an account");
+ if(S.mem[key(n)])return toast("This name already has an account");
+ S.mem[key(n)]={n:n,email:em,pin:p,d:today()};S.me=key(n);S.tab="more";log(n+" registered");toast("Account created ✅ Your ID: "+idOf(n));render()},true);
+if(S.me&&S.mem[S.me]&&S.mem[S.me].admin&&!S.admin){S.admin=true;render()}
 window.PC8=1;
 })();
