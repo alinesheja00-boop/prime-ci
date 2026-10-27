@@ -5,7 +5,7 @@ function autoRound(){var did=false;
   while(l.seats.filter(function(x){return x.s==="paid"}).length>=N&&l.joined.some(function(x){return !x.got})){
    var T0=TIERS[li],amt=T0[1]*N,r=l.joined.find(function(x){return !x.got}),msg="";
    r.got=true;S.total+=amt;S.rounds++;
-   S.done.unshift({n:r.n,amt:amt,tier:T0[0],type:"Graduate",d:today()});l.seats=[];
+   S.done.unshift({n:r.n,amt:amt,tier:T0[0],type:"Graduate",d:today()});l.seats=l.seats.filter(function(x){return x.s!=="paid"});
    note(key(r.n),"You received $"+amt+" in "+T0[0]+" ✅");
    if(li<TIERS.length-1){var k=key(r.n),old=S.access[k];S.access[k]={n:r.n,l:Math.max(old?old.l:0,li+1)};msg=" · moved to "+TIERS[li+1][0]+" 🔓";note(k,"You moved up to "+TIERS[li+1][0]+" 🔓");
     var L2=S.lv[li+1];if(!L2.joined.some(function(x){return key(x.n)===k&&!x.got})){L2.joined.push({no:(L2.joined.length?Math.max.apply(null,L2.joined.map(function(x){return x.no})):0)+1,n:r.n,d:today(),got:false})}}
@@ -29,7 +29,8 @@ function sortQ(){var ch=false;
   if(nj.some(function(x,i){return x!==l.joined[i]})){l.joined=nj;ch=true}
   l.joined.forEach(function(x,i){if(x.no!==i+1){x.no=i+1;ch=true}})});
  return ch}
-function tick(){var v=ensureVIP(),a=sortQ(),b=autoRound();return v||a||b}
+function sortS(){var ch=false;S.lv.forEach(function(l){var p=l.seats.filter(function(x){return x.s==="paid"}),r=l.seats.filter(function(x){return x.s!=="paid"}),n=p.concat(r);if(n.some(function(x,i){return x!==l.seats[i]})){l.seats=n;ch=true}});return ch}
+function tick(){var v=ensureVIP(),a=sortQ(),b=autoRound(),c=sortS();return v||a||b||c}
 window.autoRound=autoRound;window.sortQ=sortQ;
 document.addEventListener("click",function(){setTimeout(function(){if(tick())render()},0)});
 if(tick())render();
