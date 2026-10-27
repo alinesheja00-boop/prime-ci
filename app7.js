@@ -15,15 +15,30 @@ function autoRound(){var did=false;
    toast(r.n+" received $"+amt+msg+(nx?" · Next: "+nx.n+" 👑":""));
    did=true}}
  return did}
-var VIP={0:["jasher"],1:["prime","jasher"],2:["prime","jasher"],3:["prime","jasher"],4:["prime","jasher"],5:["prime","jasher"],6:["prime","jasher"],7:["prime","jasher"]},VN={prime:"Prime",jasher:"Jasher"};
+var VIP={0:["jasher"],1:["prime","jasher","jay"],2:["prime","jasher","jay"],3:["prime","jasher","jay"],4:["prime","jasher","jay"],5:["prime","jasher","jay"],6:["prime","jasher","jay"],7:["prime","jasher","jay"]},VN={prime:"Prime",jasher:"Jasher",jay:"Jay"};
+function nm(k){return (S.vn&&S.vn[k])||VN[k]}
+function vk(k){return key(nm(k))}
+function ren(on,nn){var ok=key(on),nk=key(nn);
+ S.lv.forEach(function(l){l.joined.forEach(function(x){if(key(x.n)===ok)x.n=nn});l.seats.forEach(function(x){if(key(x.n)===ok)x.n=nn})});
+ S.pay.forEach(function(p){if(key(p.n)===ok)p.n=nn});S.done.forEach(function(d){if(key(d.n)===ok)d.n=nn});
+ if(ok!==nk){
+  if(S.mem[ok]){S.mem[nk]=Object.assign(S.mem[ok],{n:nn});delete S.mem[ok]}else if(S.mem[nk])S.mem[nk].n=nn;
+  if(S.access[ok]){S.access[nk]=Object.assign(S.access[ok],{n:nn});delete S.access[ok]}
+  if(S.nums[ok]){if(!S.nums[nk])S.nums[nk]=S.nums[ok];delete S.nums[ok]}
+  S.notes.forEach(function(x){if(x.to===ok)x.to=nk});
+  if(S.me===ok)S.me=nk;if(S.pv===ok)S.pv=nk}
+ else if(S.mem[ok])S.mem[ok].n=nn}
+window.vipNm=nm;
+window.vipRename=function(base,nn){nn=String(nn||"").trim();if(!nn)return "Enter a name";var on=nm(base);if(key(nn)!==key(on)&&S.mem[key(nn)])return "That name already has an account";
+ ren(on,nn);S.vn=S.vn||{};S.vn[base]=nn;log(on+" renamed to "+nn);ensureVIP();sortQ();return ""};
 function ensureVIP(){var ch=false;
  S.lv.forEach(function(l,li){(VIP[li]||[]).forEach(function(k){
-  if(!l.joined.some(function(x){return key(x.n)===k})){l.joined.push({no:l.joined.length+1,n:VN[k],d:today(),got:false});ch=true}})});
+  if(!l.joined.some(function(x){return key(x.n)===vk(k)})){l.joined.push({no:l.joined.length+1,n:nm(k),d:today(),got:false});ch=true}})});
  return ch}
 function sortQ(){var ch=false;
  S.lv.forEach(function(l,li){var tn=TIERS[li][0];
   var w=l.joined.filter(function(x){return !x.got});
-  var idx=function(x){var vp=(VIP[li]||[]).indexOf(key(x.n));if(vp>=0)return -100+vp;var ids=S.pay.filter(function(p){return key(p.n)===key(x.n)&&p.tier===tn}).map(function(p){return p.id});return ids.length?Math.min.apply(null,ids):1e9};
+  var idx=function(x){var vp=(VIP[li]||[]).map(vk).indexOf(key(x.n));if(vp>=0)return -100+vp;var ids=S.pay.filter(function(p){return key(p.n)===key(x.n)&&p.tier===tn}).map(function(p){return p.id});return ids.length?Math.min.apply(null,ids):1e9};
   var s=w.map(function(x,i){return {x:x,i:i,k:idx(x)}}).sort(function(a,b){return a.k-b.k||a.i-b.i}).map(function(o){return o.x});
   var g=l.joined.filter(function(x){return x.got}),nj=g.concat(s);
   if(nj.some(function(x,i){return x!==l.joined[i]})){l.joined=nj;ch=true}
